@@ -1,4 +1,6 @@
+import 'package:bap/reusable_widgets/reusable_widget.dart';
 import 'package:bap/screens/login_screen/Login_screen.dart';
+import 'package:bap/screens/splash_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:bap/screens/exercise/exercise_screen.dart';
@@ -54,7 +56,22 @@ class MyApp extends StatelessWidget {
  Widget build(BuildContext context) {
     return MaterialApp(
       title: 'PowerPulse',
-      home: LoginScreen(),
+      home: SplashScreen(),
+    );
+  }
+}
+
+class LogoWidget extends StatelessWidget {
+  final double size;
+
+  LogoWidget({Key? key, required this.size}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Image.asset(
+      "assets/logo.png",
+      width: size,
+      height: size,
     );
   }
 }
@@ -90,14 +107,8 @@ class _PowerPulseAppState extends State<PowerPulseApp> {
       home: Scaffold(
         key: _scaffoldKey,
         appBar: AppBar(
-          title: Text(
-            'PP',
-            style: GoogleFonts.blackOpsOne(
-              color: _iconBool
-                  ? Color.fromARGB(255, 255, 17, 0)
-                  : Colors.blue,
-              fontSize: 40.0,
-            ),
+          leading: Container(padding: EdgeInsets.all(0),
+          child: Image.asset('assets/logo.png'),
           ),
           backgroundColor: currentColorScheme.background,
           actions: [

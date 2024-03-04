@@ -1,3 +1,4 @@
+import 'package:bap/main.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:bap/screens/profile/Profile_screen.dart';
@@ -84,13 +85,20 @@ class _LoginScreenState extends State<LoginScreen> {
         // Navigate to next screen upon successful login
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => ProfileScreen()),
+          MaterialPageRoute(builder: (context) => PowerPulseApp()),
         );
       } on FirebaseAuthException catch (e) {
         if (e.code == 'user-not-found' || e.code == 'wrong-password') {
           setState(() {
-            _emailError = 'Invalid email or password';
-            _passwordError = '';
+            _emailError = 'Invalid login information';
+            _passwordError = 'Invalid login information';
+          });
+        } else if (e.code == 'invalid-verification-code') {
+          setState(() {
+            _emailError = 'Invalid login information';
+            _passwordError = 'Invalid login information';
+            // Handle the specific case of empty reCAPTCHA token
+            _passwordError = 'Empty reCAPTCHA token';
           });
         }
       } catch (e) {
