@@ -15,7 +15,8 @@ dependencies:
 
   google_fonts: ^6.1.0
 
-
+  chewie: ^1.7.5
+  video_player: ^2.8.3
   
   cupertino_icons: ^1.0.2
   curved_navigation_bar: ^1.0.3

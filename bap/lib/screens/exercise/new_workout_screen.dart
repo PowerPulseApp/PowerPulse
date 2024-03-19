@@ -1,3 +1,4 @@
+import 'package:bap/screens/exercise/exercises_screen.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 
@@ -104,8 +105,8 @@ class _NewWorkoutScreenState extends State<NewWorkoutScreen> {
         body: Center(
           child: ElevatedButton(
             onPressed: () {
-              // Add your logic here
-              print('Add Exercise button pressed');
+              Navigator.push(context,
+                MaterialPageRoute(builder: (context) => ExercisesScreen()));
             },
             style: ElevatedButton.styleFrom(
               padding: EdgeInsets.symmetric(vertical: 16.0, horizontal: 32.0),

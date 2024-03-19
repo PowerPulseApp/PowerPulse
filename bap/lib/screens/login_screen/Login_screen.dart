@@ -59,7 +59,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: TextStyle(color: Colors.red, fontSize: 12),
                     ),
                   ),
-                firebaseButton(context, "Log IN", _signIn),
+                firebaseButton(context, "Log in", _signIn),
                 signUpOption(),
               ],
             ),
@@ -74,8 +74,8 @@ class _LoginScreenState extends State<LoginScreen> {
     String password = _passwordTextController.text.trim();
 
     setState(() {
-      _emailError = email.isEmpty ? 'Email cannot be empty' : '';
-      _passwordError = password.isEmpty ? 'Password cannot be empty' : '';
+      _emailError = email.isEmpty ? 'Invalid login information' : '';
+      _passwordError = password.isEmpty ? 'Invalid login information' : '';
     });
 
     if (_emailError.isEmpty && _passwordError.isEmpty) {
@@ -93,21 +93,16 @@ class _LoginScreenState extends State<LoginScreen> {
             _emailError = 'Invalid login information';
             _passwordError = 'Invalid login information';
           });
-        } else if (e.code == 'invalid-verification-code') {
-          setState(() {
-            _emailError = 'Invalid login information';
-            _passwordError = 'Invalid login information';
-            // Handle the specific case of empty reCAPTCHA token
-            _passwordError = 'Empty reCAPTCHA token';
-          });
         }
       } catch (e) {
         print(e);
         // Handle other exceptions if any
       }
     } else {
-      // Call setState to trigger UI rebuild to display error messages
-      setState(() {});
+      setState(() {
+        _emailError = 'Invalid login information';
+        _passwordError = 'Invalid login information';
+      });
     }
   }
 
