@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:bap/reusable_widgets/reusable_widget.dart';
 import 'package:bap/screens/exercise/new_plan_screen.dart';
 import 'package:bap/screens/exercise/plans_screen.dart';
-import 'new_workout_screen.dart'; // Import the new screen
+import 'package:bap/screens/exercise/new_workout_screen.dart'; // Import the new screen
 
 class ExerciseScreen extends StatelessWidget {
   @override
@@ -17,8 +17,7 @@ class ExerciseScreen extends StatelessWidget {
               children:<Widget> [
                 LogoWidget(imagePath: "assets/eddie.png"),
                 SizedBox(height: 8.0),
-                _buildNavigationButton(context, 'New Workout',
-                    NewWorkoutScreen()), // Navigate to the new screen
+                _buildNavigationButton(context, 'New Workout', NewWorkoutScreen()), 
                 SizedBox(height: 8.0),
                 _buildNavigationButton(context, 'New Plan', NewPlanScreen()),
                 SizedBox(height: 8.0),
