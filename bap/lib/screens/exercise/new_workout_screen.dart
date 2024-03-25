@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:firebase_database/firebase_database.dart';
 import 'exercises_screen.dart';
 
 class NewWorkoutScreen extends StatefulWidget {
@@ -12,6 +13,10 @@ class _NewWorkoutScreenState extends State<NewWorkoutScreen> {
   int _secondsElapsed = 0;
   bool _isPaused = false;
   List<Map<String, dynamic>> selectedExercises = [];
+
+  // Initialize Firebase database reference
+  final DatabaseReference _workoutRef =
+      FirebaseDatabase.instance.reference().child('workouts');
 
   @override
   void initState() {
@@ -113,7 +118,7 @@ class _NewWorkoutScreenState extends State<NewWorkoutScreen> {
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop({
-                  'kg': double.tryParse(kgController.text) ?? 0.0,
+                  'kg': double.tryParse(kgController.text) ?? 0,
                   'reps': int.tryParse(repsController.text) ?? 0,
                 });
               },
@@ -137,8 +142,13 @@ class _NewWorkoutScreenState extends State<NewWorkoutScreen> {
     });
   }
 
-  void _finishWorkout() {
-    // Handle finishing workout here
+  // Function to send workout data to Firebase database
+  void _sendWorkoutData() {
+    _workoutRef.push().set({
+      'workoutTime': _formatTime(_secondsElapsed),
+      'exercises': selectedExercises,
+    });
+    Navigator.of(context).pop();
   }
 
   @override
@@ -163,15 +173,11 @@ class _NewWorkoutScreenState extends State<NewWorkoutScreen> {
               onPressed: _togglePause,
               icon: _isPaused ? Icon(Icons.play_arrow) : Icon(Icons.pause),
             ),
-            TextButton(
-              onPressed: _finishWorkout,
-              child: Text(
-                'Finish Workout',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+            IconButton(
+              // Changed to IconButton
+              onPressed:
+                  _sendWorkoutData, // Changed to send workout data to Firebase
+              icon: Icon(Icons.done), // Changed to "done" icon
             ),
           ],
         ),
@@ -215,12 +221,16 @@ class _NewWorkoutScreenState extends State<NewWorkoutScreen> {
                   if (exercise['sets'].isNotEmpty)
                     Column(
                       children: [
-                        for (var setIndex = 0; setIndex < exercise['sets'].length; setIndex++)
+                        for (var setIndex = 0;
+                            setIndex < exercise['sets'].length;
+                            setIndex++)
                           ListTile(
-                            title: Text('Kg: ${exercise['sets'][setIndex]['kg']}, Reps: ${exercise['sets'][setIndex]['reps']}'),
+                            title: Text(
+                                'Kg: ${exercise['sets'][setIndex]['kg']}, Reps: ${exercise['sets'][setIndex]['reps']}'),
                             trailing: IconButton(
                               icon: Icon(Icons.delete),
-                              onPressed: () => _deleteSet(exerciseIndex, setIndex),
+                              onPressed: () =>
+                                  _deleteSet(exerciseIndex, setIndex),
                             ),
                           ),
                       ],

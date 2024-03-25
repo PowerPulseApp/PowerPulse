@@ -26,7 +26,8 @@ class ExercisesScreen extends StatelessWidget {
             itemBuilder: (BuildContext context, int index) {
               final exercise = exercises[index];
               final exerciseData = exercise.data() as Map<String, dynamic>;
-              final exerciseName = exerciseData['name'] ?? 'Exercise Name Not Available';
+              final exerciseName =
+                  exerciseData['name'] ?? 'Exercise Name Not Available';
               final videoUrl = exerciseData['videoUrl'];
               return ExerciseTile(
                 exerciseName: exerciseName,
@@ -48,7 +49,10 @@ class ExerciseTile extends StatelessWidget {
   final String? videoUrl; // Allow null videoUrl
   final Function(Map<String, dynamic>) onExerciseSelected;
 
-  ExerciseTile({required this.exerciseName, required this.videoUrl, required this.onExerciseSelected});
+  ExerciseTile(
+      {required this.exerciseName,
+      required this.videoUrl,
+      required this.onExerciseSelected});
 
   @override
   Widget build(BuildContext context) {
@@ -58,10 +62,10 @@ class ExerciseTile extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           IconButton(
-            icon: Icon(Icons.play_arrow),
+            icon: Icon(Icons.question_mark),
             onPressed: () {
-               if (videoUrl != null) {
-            _playExerciseVideo(context, videoUrl);
+              if (videoUrl != null) {
+                _playExerciseVideo(context, videoUrl);
               }
             },
           ),
@@ -78,7 +82,8 @@ class ExerciseTile extends StatelessWidget {
 
   void _playExerciseVideo(BuildContext context, String? videoUrl) async {
     if (videoUrl != null) {
-       final firebaseStorageRef = firebase_storage.FirebaseStorage.instance.refFromURL(videoUrl);
+      final firebaseStorageRef =
+          firebase_storage.FirebaseStorage.instance.refFromURL(videoUrl);
       String downloadURL = await firebaseStorageRef.getDownloadURL();
       Navigator.push(
         context,
@@ -102,12 +107,13 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   late Future<void> _initializeVideoPlayerFuture;
   double _videoAspectRatio = 16 / 9; // Default aspect ratio
   double _sliderValue = 0.0; // Initial value for the slider
-  
+
   @override
-   void initState() {
+  void initState() {
     super.initState();
-    _controller = VideoPlayerController.network(widget.videoUrl, )
-      ..addListener(() {
+    _controller = VideoPlayerController.network(
+      widget.videoUrl,
+    )..addListener(() {
         setState(() {
           _sliderValue = _controller.value.position.inSeconds.toDouble();
         });
