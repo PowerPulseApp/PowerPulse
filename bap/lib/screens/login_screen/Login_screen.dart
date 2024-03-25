@@ -21,6 +21,21 @@ class _LoginScreenState extends State<LoginScreen> {
   String _passwordError = '';
 
   @override
+  void initState() {
+    super.initState();
+    // Add authStateChanges listener
+    FirebaseAuth.instance.authStateChanges().listen((User? user) {
+      if (user != null) {
+        // User is signed in, navigate to PowerPulseApp
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => PowerPulseApp()),
+        );
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
