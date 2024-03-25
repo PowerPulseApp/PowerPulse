@@ -29,9 +29,11 @@ class ExercisesScreen extends StatelessWidget {
               final exerciseName =
                   exerciseData['name'] ?? 'Exercise Name Not Available';
               final videoUrl = exerciseData['videoUrl'];
+              final exerciseDescription = exerciseData['description'] ?? 'No description available';
               return ExerciseTile(
                 exerciseName: exerciseName,
                 videoUrl: videoUrl,
+                exerciseDescription: exerciseDescription,
                 onExerciseSelected: (selectedExercise) {
                   Navigator.pop(context, selectedExercise);
                 },
@@ -46,16 +48,22 @@ class ExercisesScreen extends StatelessWidget {
 
 class ExerciseTile extends StatelessWidget {
   final String exerciseName;
-  final String? videoUrl; // Allow null videoUrl
+  final String? videoUrl;
+  final String exerciseDescription;
   final Function(Map<String, dynamic>) onExerciseSelected;
 
-  ExerciseTile(
-      {required this.exerciseName,
-      required this.videoUrl,
-      required this.onExerciseSelected});
+  ExerciseTile({
+    required this.exerciseName,
+    required this.videoUrl,
+    required this.exerciseDescription,
+    required this.onExerciseSelected,
+  });
 
   @override
   Widget build(BuildContext context) {
+    // Replace "\n" with line break character
+    final formattedDescription = exerciseDescription.replaceAll("\\n", "\n");
+
     return ListTile(
       title: Text(exerciseName),
       trailing: Row(
@@ -65,14 +73,14 @@ class ExerciseTile extends StatelessWidget {
             icon: Icon(Icons.question_mark),
             onPressed: () {
               if (videoUrl != null) {
-                _playExerciseVideo(context, videoUrl);
+                _playExerciseVideo(context, videoUrl, formattedDescription);
               }
             },
           ),
           IconButton(
             icon: Icon(Icons.add),
             onPressed: () {
-              onExerciseSelected({'name': exerciseName});
+              onExerciseSelected({'name': exerciseName, 'description': formattedDescription});
             },
           ),
         ],
@@ -80,14 +88,14 @@ class ExerciseTile extends StatelessWidget {
     );
   }
 
-  void _playExerciseVideo(BuildContext context, String? videoUrl) async {
+  void _playExerciseVideo(BuildContext context, String? videoUrl, String description) async {
     if (videoUrl != null) {
       final firebaseStorageRef =
           firebase_storage.FirebaseStorage.instance.refFromURL(videoUrl);
       String downloadURL = await firebaseStorageRef.getDownloadURL();
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => VideoPlayerScreen(downloadURL)),
+        MaterialPageRoute(builder: (context) => VideoPlayerScreen(downloadURL, description)),
       );
     }
   }
@@ -95,8 +103,9 @@ class ExerciseTile extends StatelessWidget {
 
 class VideoPlayerScreen extends StatefulWidget {
   final String videoUrl;
+  final String description;
 
-  VideoPlayerScreen(this.videoUrl);
+  VideoPlayerScreen(this.videoUrl, this.description);
 
   @override
   _VideoPlayerScreenState createState() => _VideoPlayerScreenState();
@@ -131,40 +140,46 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Exercise Video'),
+        title: Text('Info'),
         backgroundColor: Colors.transparent,
       ),
-      body: FutureBuilder(
-        future: _initializeVideoPlayerFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.done) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  AspectRatio(
-                    aspectRatio: _controller.value.aspectRatio,
-                    child: VideoPlayer(_controller),
-                  ),
-                  SizedBox(height: 15),
-                  Slider(
-                    value: _sliderValue,
-                    min: 0,
-                    max: _controller.value.duration?.inSeconds.toDouble() ?? 0,
-                    onChanged: (value) {
-                      setState(() {
-                        _sliderValue = value;
-                        _controller.seekTo(Duration(seconds: value.toInt()));
-                      });
-                    },
-                  ),
-                ],
-              ),
-            );
-          } else {
-            return Center(child: CircularProgressIndicator());
-          }
-        },
+      body: SingleChildScrollView(
+        child: FutureBuilder(
+          future: _initializeVideoPlayerFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.done) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    AspectRatio(
+                      aspectRatio: _controller.value.aspectRatio,
+                      child: VideoPlayer(_controller),
+                    ),
+                    SizedBox(height: 15),
+                    Slider(
+                      value: _sliderValue,
+                      min: 0,
+                      max: _controller.value.duration?.inSeconds.toDouble() ?? 0,
+                      onChanged: (value) {
+                        setState(() {
+                          _sliderValue = value;
+                          _controller.seekTo(Duration(seconds: value.toInt()));
+                        });
+                      },
+                    ),
+                    Padding(
+                      padding: EdgeInsets.all(8),
+                      child: Text(widget.description, style: TextStyle(fontSize: 16)),
+                    ),
+                  ],
+                ),
+              );
+            } else {
+              return Center(child: CircularProgressIndicator());
+            }
+          },
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
