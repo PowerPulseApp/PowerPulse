@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:firebase_database/firebase_database.dart';
 import 'exercises_screen.dart';
+import 'package:bap/main.dart';
 
 class NewWorkoutScreen extends StatefulWidget {
   @override
@@ -153,13 +154,14 @@ class _NewWorkoutScreenState extends State<NewWorkoutScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Color iconAndTextColor = Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white;
     return WillPopScope(
       onWillPop: () => _confirmLeave(context),
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           leading: IconButton(
-            icon: Icon(Icons.close),
+            icon: Icon(Icons.close, color: iconAndTextColor,),
             onPressed: () async {
               bool confirm = await _confirmLeave(context);
               if (confirm) {
@@ -167,17 +169,17 @@ class _NewWorkoutScreenState extends State<NewWorkoutScreen> {
               }
             },
           ),
-          title: Text(_formatTime(_secondsElapsed)),
+          title: Text(_formatTime(_secondsElapsed), style: TextStyle(color: iconAndTextColor),),
           actions: [
             IconButton(
               onPressed: _togglePause,
-              icon: _isPaused ? Icon(Icons.play_arrow) : Icon(Icons.pause),
+              icon: _isPaused ? Icon(Icons.play_arrow, color: iconAndTextColor,) : Icon(Icons.pause, color: iconAndTextColor,),
             ),
             IconButton(
               // Changed to IconButton
               onPressed:
                   _sendWorkoutData, // Changed to send workout data to Firebase
-              icon: Icon(Icons.done), // Changed to "done" icon
+              icon: Icon(Icons.done, color: Colors.green,), // Changed to "done" icon
             ),
           ],
         ),
@@ -207,7 +209,7 @@ class _NewWorkoutScreenState extends State<NewWorkoutScreen> {
                     title: Text(exercise['name']),
                     subtitle: Text('Sets: ${exercise['sets'].length}'),
                     trailing: IconButton(
-                      icon: Icon(Icons.add),
+                      icon: Icon(Icons.add, color: iconAndTextColor,),
                       onPressed: () async {
                         final set = await _addSet(context);
                         if (set != null) {
@@ -228,7 +230,7 @@ class _NewWorkoutScreenState extends State<NewWorkoutScreen> {
                             title: Text(
                                 'Kg: ${exercise['sets'][setIndex]['kg']}, Reps: ${exercise['sets'][setIndex]['reps']}'),
                             trailing: IconButton(
-                              icon: Icon(Icons.delete),
+                              icon: Icon(Icons.delete, color: iconAndTextColor,),
                               onPressed: () =>
                                   _deleteSet(exerciseIndex, setIndex),
                             ),
@@ -252,7 +254,7 @@ class _NewWorkoutScreenState extends State<NewWorkoutScreen> {
               setState(() {});
             }
           },
-          child: Icon(Icons.add),
+          child: Icon(Icons.add,color: iconAndTextColor,),
         ),
       ),
     );

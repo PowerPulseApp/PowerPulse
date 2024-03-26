@@ -6,9 +6,11 @@ import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 class ExercisesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+     Color iconColor = Theme.of(context).iconTheme.color!;
+    Color textColor = Theme.of(context).textTheme.bodyText2!.color!;
     return Scaffold(
       appBar: AppBar(
-        title: Text('Exercise List'),
+        title: Text('Exercise List', style: TextStyle(color: textColor),),
         backgroundColor: Colors.transparent,
       ),
       body: StreamBuilder<QuerySnapshot>(
@@ -61,7 +63,6 @@ class ExerciseTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Replace "\n" with line break character
     final formattedDescription = exerciseDescription.replaceAll("\\n", "\n");
 
     return ListTile(
@@ -120,7 +121,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   @override
   void initState() {
     super.initState();
-    _controller = VideoPlayerController.network(
+    _controller = VideoPlayerController.network(  
       widget.videoUrl,
     )..addListener(() {
         setState(() {
@@ -138,9 +139,11 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Color iconColor = Theme.of(context).iconTheme.color!;
+    Color textColor = Theme.of(context).textTheme.bodyText2!.color!;
     return Scaffold(
       appBar: AppBar(
-        title: Text('Info'),
+        title: Text('Info', style: TextStyle(color: textColor),),
         backgroundColor: Colors.transparent,
       ),
       body: SingleChildScrollView(
@@ -170,7 +173,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                     ),
                     Padding(
                       padding: EdgeInsets.all(8),
-                      child: Text(widget.description, style: TextStyle(fontSize: 16)),
+                      child: Text(widget.description, style: TextStyle(fontSize: 16, color: textColor)),
                     ),
                   ],
                 ),
