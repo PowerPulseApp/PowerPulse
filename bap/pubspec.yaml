@@ -13,6 +13,8 @@ dependencies:
   flutter:
     sdk: flutter
 
+  provider: ^6.1.2
+
   google_fonts: ^6.1.0
 
   chewie: ^1.7.5

@@ -154,7 +154,7 @@ class _NewWorkoutScreenState extends State<NewWorkoutScreen> {
 
   @override
   Widget build(BuildContext context) {
-    Color iconAndTextColor = Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white;
+    Color iconAndTextColor = Theme.of(context).brightness == Brightness.dark? Colors.white : Colors.black;
     return WillPopScope(
       onWillPop: () => _confirmLeave(context),
       child: Scaffold(

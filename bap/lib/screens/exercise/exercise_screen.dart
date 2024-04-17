@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:bap/reusable_widgets/reusable_widget.dart';
 import 'package:bap/screens/exercise/new_plan_screen.dart';
 import 'package:bap/screens/exercise/plans_screen.dart';
-import 'package:bap/screens/exercise/new_workout_screen.dart'; // Import the new screen
+import 'package:bap/screens/exercise/new_workout_screen.dart';
+import 'package:bap/main.dart'; // Import the new screen
 
 class ExerciseScreen extends StatelessWidget {
   @override

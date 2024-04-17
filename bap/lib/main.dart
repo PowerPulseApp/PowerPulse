@@ -9,69 +9,34 @@ import 'package:bap/screens/History/history.dart';
 import 'package:bap/screens/groups/groups_screen.dart';
 import 'package:bap/screens/profile/profile_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
-
+import 'package:bap/themes/theme_provider.dart';
+import 'package:provider/provider.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   Firebase.initializeApp();
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => ThemeProvider(),
+      child: MyApp(),
+    ),
+  );
 }
-
-bool _iconBool = false;
-
-IconData _iconLight = Icons.wb_sunny;
-IconData _iconDark = Icons.nights_stay;
-
-ColorScheme _lightColorScheme = ColorScheme(
-  primary: const Color.fromARGB(255, 0, 140, 255),
-  secondary: Color.fromARGB(255, 182, 183, 184),
-  surface: Color.fromARGB(255, 182, 183, 184),
-  background: Color.fromARGB(255, 182, 183, 184),
-  error: Color.fromARGB(255, 182, 183, 184),
-  onPrimary: Color.fromARGB(255, 182, 183, 184),
-  onSecondary: Color.fromARGB(255, 182, 183, 184),
-  onSurface: Color.fromARGB(255, 50, 50, 50),
-  onBackground: Color.fromARGB(255, 182, 183, 184),
-  onError: Color.fromARGB(255, 182, 183, 184),
-  brightness: Brightness.light,
-);
-
-ColorScheme _darkColorScheme = ColorScheme(
-  primary: Color.fromARGB(255, 255, 0, 0),
-  secondary: Color.fromARGB(255, 50, 50, 50),
-  surface: Color.fromARGB(255, 50, 50, 50),
-  background: Color.fromARGB(255, 50, 50, 50),
-  error: Color.fromARGB(255, 50, 50, 50),
-  onPrimary: Color.fromARGB(255, 50, 50, 50),
-  onSecondary: Color.fromARGB(255, 50, 50, 50),
-  onSurface: Color.fromARGB(255, 182, 183, 184),
-  onBackground: Color.fromARGB(255, 50, 50, 50),
-  onError: Color.fromARGB(255, 50, 50, 50),
-  brightness: Brightness.dark,
-);
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-  @override
- Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'PowerPulse',
-      home: SplashScreen(),
-    );
-  }
-}
-
-class LogoWidget extends StatelessWidget {
-  final double size;
-
-  LogoWidget({Key? key, required this.size}) : super(key: key);
-
   @override
   Widget build(BuildContext context) {
-    return Image.asset(
-      "assets/logo.png",
-      width: size,
-      height: size,
+    return ChangeNotifierProvider(
+      create: (context) => ThemeProvider(),
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, child) {
+          return MaterialApp(
+            title: 'PowerPulse',
+            theme: themeProvider.theme,
+            home: PowerPulseApp(),
+          );
+        },
+      ),
     );
   }
 }
@@ -96,82 +61,59 @@ class _PowerPulseAppState extends State<PowerPulseApp> {
 
   @override
   Widget build(BuildContext context) {
-    ColorScheme currentColorScheme = _getCurrentColorScheme();
-
-    return MaterialApp(
-      theme: ThemeData(
-        primaryColor: currentColorScheme.primary,
-        hintColor: currentColorScheme.secondary,
-        scaffoldBackgroundColor: currentColorScheme.background,
+    return Scaffold(
+      key: _scaffoldKey,
+      appBar: AppBar(
+        leading: Container(padding: EdgeInsets.all(0), child: Image.asset('assets/logo.png'),),
+        actions: [
+          IconButton(
+            onPressed: () {
+              print('Toggle theme button pressed');
+              Provider.of<ThemeProvider>(context, listen: false).toggleTheme();
+            },
+            icon: Icon(Icons.brightness_4),
+          ),
+        ],
       ),
-      home: Scaffold(
-        key: _scaffoldKey,
-        appBar: AppBar(
-          leading: Container(padding: EdgeInsets.all(0),
-          child: Image.asset('assets/logo.png'),
+      body: SafeArea(
+        child: AnimatedSwitcher(
+          duration: Duration(milliseconds: 500),
+          child: _pages[_selectedIndex],
+          switchInCurve: Curves.easeInOut,
+          switchOutCurve: Curves.easeInOut,
+        ),
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        type: BottomNavigationBarType.fixed,
+        items: [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
           ),
-          backgroundColor: currentColorScheme.background,
-          actions: [
-            IconButton(
-              onPressed: () {
-                setState(() {
-                  _iconBool = !_iconBool;
-                });
-                _scaffoldKey.currentState?.setState(() {});
-              },
-              icon: Icon(_iconBool ? _iconDark : _iconLight),
-            ),
-          ],
-        ),
-        body: SafeArea(
-          child: AnimatedSwitcher(
-            duration: Duration(milliseconds: 500),
-            child: _pages[_selectedIndex],
-            switchInCurve: Curves.easeInOut,
-            switchOutCurve: Curves.easeInOut,
+          BottomNavigationBarItem(
+            icon: Icon(Icons.history),
+            label: 'History',
           ),
-        ),
-        bottomNavigationBar: BottomNavigationBar(
-          currentIndex: _selectedIndex,
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: currentColorScheme.background,
-          selectedItemColor: _iconBool ? _darkColorScheme.primary : Colors.blue,
-          unselectedItemColor: _iconBool
-              ? _darkColorScheme.onSurface.withOpacity(0.6)
-              : _lightColorScheme.onSurface.withOpacity(0.6),
-          items: [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.history),
-              label: 'History',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.add),
-              label: 'Exercise',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.groups),
-              label: 'Groups',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.account_circle_rounded),
-              label: 'Profile',
-            ),
-          ],
-          onTap: (index) {
-            setState(() {
-              _selectedIndex = index;
-            });
-          },
-        ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.add),
+            label: 'Exercise',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.groups),
+            label: 'Groups',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.account_circle_rounded),
+            label: 'Profile',
+          ),
+        ],
+        onTap: (index) {
+          setState(() {
+            _selectedIndex = index;
+          });
+        },
       ),
     );
-  }
-
-  ColorScheme _getCurrentColorScheme() {
-    return _iconBool ? _darkColorScheme : _lightColorScheme;
   }
 }
