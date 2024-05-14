@@ -12,9 +12,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:bap/themes/theme_provider.dart';
 import 'package:provider/provider.dart';
 
-void main() {
+
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  Firebase.initializeApp();
+  await Firebase.initializeApp();
   runApp(
     ChangeNotifierProvider(
       create: (context) => ThemeProvider(),

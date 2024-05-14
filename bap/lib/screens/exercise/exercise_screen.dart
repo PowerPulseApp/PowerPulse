@@ -8,6 +8,7 @@ import 'package:bap/main.dart'; // Import the new screen
 class ExerciseScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    Color iconAndTextColor = Theme.of(context).brightness == Brightness.dark? Colors.white : Colors.black;
     return Scaffold(
       body: Stack(
         children: [

@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'exercises_screen.dart';
-import 'package:bap/main.dart';
+
 
 class NewWorkoutScreen extends StatefulWidget {
   @override
   _NewWorkoutScreenState createState() => _NewWorkoutScreenState();
 }
+
 
 class _NewWorkoutScreenState extends State<NewWorkoutScreen> {
   late Timer _timer;
@@ -15,15 +19,13 @@ class _NewWorkoutScreenState extends State<NewWorkoutScreen> {
   bool _isPaused = false;
   List<Map<String, dynamic>> selectedExercises = [];
 
-  // Initialize Firebase database reference
-  final DatabaseReference _workoutRef =
-      FirebaseDatabase.instance.reference().child('workouts');
 
   @override
   void initState() {
     super.initState();
     _timer = Timer.periodic(Duration(seconds: 1), _incrementTimer);
   }
+
 
   void _incrementTimer(Timer timer) {
     if (!_isPaused) {
@@ -33,12 +35,14 @@ class _NewWorkoutScreenState extends State<NewWorkoutScreen> {
     }
   }
 
+
   String _formatTime(int seconds) {
     int hours = seconds ~/ 3600;
     int minutes = (seconds % 3600) ~/ 60;
     int remainingSeconds = seconds % 60;
     return '${_twoDigits(hours)}:${_twoDigits(minutes)}:${_twoDigits(remainingSeconds)}';
   }
+
 
   String _twoDigits(int n) {
     if (n >= 10) {
@@ -47,17 +51,20 @@ class _NewWorkoutScreenState extends State<NewWorkoutScreen> {
     return '0$n';
   }
 
+
   void _togglePause() {
     setState(() {
       _isPaused = !_isPaused;
     });
   }
 
+
   @override
   void dispose() {
     _timer.cancel();
     super.dispose();
   }
+
 
   Future<bool> _confirmLeave(BuildContext context) async {
     return await showDialog(
@@ -85,9 +92,11 @@ class _NewWorkoutScreenState extends State<NewWorkoutScreen> {
         false;
   }
 
+
   Future<Map<String, dynamic>?> _addSet(BuildContext context) async {
     TextEditingController kgController = TextEditingController();
     TextEditingController repsController = TextEditingController();
+
 
     return await showDialog<Map<String, dynamic>>(
       context: context,
@@ -131,11 +140,13 @@ class _NewWorkoutScreenState extends State<NewWorkoutScreen> {
     );
   }
 
+
   void _deleteSet(int exerciseIndex, int setIndex) {
     setState(() {
       selectedExercises[exerciseIndex]['sets'].removeAt(setIndex);
     });
   }
+
 
   void _deleteExercise(int index) {
     setState(() {
@@ -143,25 +154,86 @@ class _NewWorkoutScreenState extends State<NewWorkoutScreen> {
     });
   }
 
-  // Function to send workout data to Firebase database
-  void _sendWorkoutData() {
-    _workoutRef.push().set({
-      'workoutTime': _formatTime(_secondsElapsed),
-      'exercises': selectedExercises,
-    });
-    Navigator.of(context).pop();
+
+  Future<void> _sendWorkoutDataToFirestore() async {
+    try {
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        CollectionReference workoutsRef = FirebaseFirestore.instance
+            .collection('done_workout')
+            .doc('all_workouts')
+            .collection('workouts');
+
+
+        // Prepare workout data
+        List<Map<String, dynamic>> exercisesData = [];
+        for (var exercise in selectedExercises) {
+          List<Map<String, dynamic>> setsData = [];
+          for (var set in exercise['sets']) {
+            setsData.add({
+              'reps': set['reps'],
+              'kg': set['kg'],
+              // Add more fields as needed
+            });
+          }
+          exercisesData.add({
+            'name': exercise['name'],
+            'sets': setsData,
+          });
+        }
+
+
+        // Calculate total workout time in seconds
+        int totalWorkoutTimeInSeconds = _secondsElapsed;
+
+
+        // Calculate total weight lifted
+        double totalWeight = 0;
+        for (var exercise in selectedExercises) {
+          for (var set in exercise['sets']) {
+            totalWeight += (set['reps'] * set['kg']);
+          }
+        }
+
+
+        // Prepare workout data to be added to Firestore
+        Map<String, dynamic> workoutData = {
+          'userId': user.uid,
+          'totalWorkoutTime': totalWorkoutTimeInSeconds,
+          'timestamp': Timestamp.now(),
+          'totalWeight': totalWeight,
+          'exercises': exercisesData,
+        };
+
+
+        // Add workout data to Firestore
+        await workoutsRef.add(workoutData);
+
+
+        // Close the screen after adding data to Firestore
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      print('Error sending workout data to Firestore: $e');
+    }
   }
+
 
   @override
   Widget build(BuildContext context) {
-    Color iconAndTextColor = Theme.of(context).brightness == Brightness.dark? Colors.white : Colors.black;
+    Color iconAndTextColor = Theme.of(context).brightness == Brightness.dark
+        ? Colors.black
+        : Colors.white;
     return WillPopScope(
       onWillPop: () => _confirmLeave(context),
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           leading: IconButton(
-            icon: Icon(Icons.close, color: iconAndTextColor,),
+            icon: Icon(
+              Icons.close,
+              color: iconAndTextColor,
+            ),
             onPressed: () async {
               bool confirm = await _confirmLeave(context);
               if (confirm) {
@@ -169,17 +241,29 @@ class _NewWorkoutScreenState extends State<NewWorkoutScreen> {
               }
             },
           ),
-          title: Text(_formatTime(_secondsElapsed), style: TextStyle(color: iconAndTextColor),),
+          title: Text(
+            _formatTime(_secondsElapsed),
+            style: TextStyle(color: iconAndTextColor),
+          ),
           actions: [
             IconButton(
               onPressed: _togglePause,
-              icon: _isPaused ? Icon(Icons.play_arrow, color: iconAndTextColor,) : Icon(Icons.pause, color: iconAndTextColor,),
+              icon: _isPaused
+                  ? Icon(
+                      Icons.play_arrow,
+                      color: iconAndTextColor,
+                    )
+                  : Icon(
+                      Icons.pause,
+                      color: iconAndTextColor,
+                    ),
             ),
             IconButton(
-              // Changed to IconButton
-              onPressed:
-                  _sendWorkoutData, // Changed to send workout data to Firebase
-              icon: Icon(Icons.done, color: Colors.green,), // Changed to "done" icon
+              onPressed: _sendWorkoutDataToFirestore,
+              icon: Icon(
+                Icons.done,
+                color: Colors.green,
+              ),
             ),
           ],
         ),
@@ -209,7 +293,10 @@ class _NewWorkoutScreenState extends State<NewWorkoutScreen> {
                     title: Text(exercise['name']),
                     subtitle: Text('Sets: ${exercise['sets'].length}'),
                     trailing: IconButton(
-                      icon: Icon(Icons.add, color: iconAndTextColor,),
+                      icon: Icon(
+                        Icons.add,
+                        color: iconAndTextColor,
+                      ),
                       onPressed: () async {
                         final set = await _addSet(context);
                         if (set != null) {
@@ -230,7 +317,10 @@ class _NewWorkoutScreenState extends State<NewWorkoutScreen> {
                             title: Text(
                                 'Kg: ${exercise['sets'][setIndex]['kg']}, Reps: ${exercise['sets'][setIndex]['reps']}'),
                             trailing: IconButton(
-                              icon: Icon(Icons.delete, color: iconAndTextColor,),
+                              icon: Icon(
+                                Icons.delete,
+                                color: iconAndTextColor,
+                              ),
                               onPressed: () =>
                                   _deleteSet(exerciseIndex, setIndex),
                             ),
@@ -248,15 +338,20 @@ class _NewWorkoutScreenState extends State<NewWorkoutScreen> {
               context,
               MaterialPageRoute(builder: (context) => ExercisesScreen()),
             );
-            // Handle the selected exercise data here
             if (selectedExercise != null) {
               selectedExercises.add({...selectedExercise, 'sets': []});
               setState(() {});
             }
           },
-          child: Icon(Icons.add,color: iconAndTextColor,),
+          child: Icon(
+            Icons.add,
+            color: iconAndTextColor,
+          ),
         ),
       ),
     );
   }
 }
+
+
+
