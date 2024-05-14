@@ -6,12 +6,10 @@ import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'exercises_screen.dart';
 
-
 class NewWorkoutScreen extends StatefulWidget {
   @override
   _NewWorkoutScreenState createState() => _NewWorkoutScreenState();
 }
-
 
 class _NewWorkoutScreenState extends State<NewWorkoutScreen> {
   late Timer _timer;
@@ -19,13 +17,11 @@ class _NewWorkoutScreenState extends State<NewWorkoutScreen> {
   bool _isPaused = false;
   List<Map<String, dynamic>> selectedExercises = [];
 
-
   @override
   void initState() {
     super.initState();
     _timer = Timer.periodic(Duration(seconds: 1), _incrementTimer);
   }
-
 
   void _incrementTimer(Timer timer) {
     if (!_isPaused) {
@@ -35,14 +31,12 @@ class _NewWorkoutScreenState extends State<NewWorkoutScreen> {
     }
   }
 
-
   String _formatTime(int seconds) {
     int hours = seconds ~/ 3600;
     int minutes = (seconds % 3600) ~/ 60;
     int remainingSeconds = seconds % 60;
     return '${_twoDigits(hours)}:${_twoDigits(minutes)}:${_twoDigits(remainingSeconds)}';
   }
-
 
   String _twoDigits(int n) {
     if (n >= 10) {
@@ -51,20 +45,17 @@ class _NewWorkoutScreenState extends State<NewWorkoutScreen> {
     return '0$n';
   }
 
-
   void _togglePause() {
     setState(() {
       _isPaused = !_isPaused;
     });
   }
 
-
   @override
   void dispose() {
     _timer.cancel();
     super.dispose();
   }
-
 
   Future<bool> _confirmLeave(BuildContext context) async {
     return await showDialog(
@@ -92,11 +83,9 @@ class _NewWorkoutScreenState extends State<NewWorkoutScreen> {
         false;
   }
 
-
   Future<Map<String, dynamic>?> _addSet(BuildContext context) async {
     TextEditingController kgController = TextEditingController();
     TextEditingController repsController = TextEditingController();
-
 
     return await showDialog<Map<String, dynamic>>(
       context: context,
@@ -140,13 +129,11 @@ class _NewWorkoutScreenState extends State<NewWorkoutScreen> {
     );
   }
 
-
   void _deleteSet(int exerciseIndex, int setIndex) {
     setState(() {
       selectedExercises[exerciseIndex]['sets'].removeAt(setIndex);
     });
   }
-
 
   void _deleteExercise(int index) {
     setState(() {
@@ -154,16 +141,14 @@ class _NewWorkoutScreenState extends State<NewWorkoutScreen> {
     });
   }
 
-
   Future<void> _sendWorkoutDataToFirestore() async {
     try {
       User? user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        CollectionReference workoutsRef = FirebaseFirestore.instance
+        CollectionReference userWorkoutsRef = FirebaseFirestore.instance
             .collection('done_workout')
-            .doc('all_workouts')
+            .doc(user.uid)
             .collection('workouts');
-
 
         // Prepare workout data
         List<Map<String, dynamic>> exercisesData = [];
@@ -182,10 +167,8 @@ class _NewWorkoutScreenState extends State<NewWorkoutScreen> {
           });
         }
 
-
         // Calculate total workout time in seconds
         int totalWorkoutTimeInSeconds = _secondsElapsed;
-
 
         // Calculate total weight lifted
         double totalWeight = 0;
@@ -194,7 +177,6 @@ class _NewWorkoutScreenState extends State<NewWorkoutScreen> {
             totalWeight += (set['reps'] * set['kg']);
           }
         }
-
 
         // Prepare workout data to be added to Firestore
         Map<String, dynamic> workoutData = {
@@ -205,10 +187,8 @@ class _NewWorkoutScreenState extends State<NewWorkoutScreen> {
           'exercises': exercisesData,
         };
 
-
         // Add workout data to Firestore
-        await workoutsRef.add(workoutData);
-
+        await userWorkoutsRef.add(workoutData);
 
         // Close the screen after adding data to Firestore
         Navigator.of(context).pop();
@@ -218,12 +198,11 @@ class _NewWorkoutScreenState extends State<NewWorkoutScreen> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     Color iconAndTextColor = Theme.of(context).brightness == Brightness.dark
-        ? Colors.black
-        : Colors.white;
+        ? Colors.white
+        : Colors.black;
     return WillPopScope(
       onWillPop: () => _confirmLeave(context),
       child: Scaffold(
@@ -352,6 +331,3 @@ class _NewWorkoutScreenState extends State<NewWorkoutScreen> {
     );
   }
 }
-
-
-
