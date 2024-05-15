@@ -1,17 +1,15 @@
-import 'package:bap/reusable_widgets/reusable_widget.dart';
-import 'package:bap/screens/login_screen/Login_screen.dart';
+import 'package:bap/ContactUs_screen.dart';
+import 'package:flutter/material.dart';
 import 'package:bap/screens/splash_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/material.dart';
 import 'package:bap/screens/exercise/exercise_screen.dart';
 import 'package:bap/screens/home/home_screen.dart';
 import 'package:bap/screens/History/history.dart';
 import 'package:bap/screens/groups/groups_screen.dart';
 import 'package:bap/screens/profile/profile_screen.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:bap/themes/theme_provider.dart';
 import 'package:provider/provider.dart';
-
+import 'package:url_launcher/url_launcher.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,7 +32,7 @@ class MyApp extends StatelessWidget {
           return MaterialApp(
             title: 'PowerPulse',
             theme: themeProvider.theme,
-            home: PowerPulseApp(),
+            home: SplashScreen(),
           );
         },
       ),
@@ -59,6 +57,7 @@ class _PowerPulseAppState extends State<PowerPulseApp> {
   ];
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final GlobalKey<_PowerPulseAppState> _appStateKey = GlobalKey();
 
   @override
   Widget build(BuildContext context) {
@@ -69,10 +68,9 @@ class _PowerPulseAppState extends State<PowerPulseApp> {
         actions: [
           IconButton(
             onPressed: () {
-              print('Toggle theme button pressed');
-              Provider.of<ThemeProvider>(context, listen: false).toggleTheme();
+              _showSettingsMenu(context);
             },
-            icon: Icon(Icons.brightness_4),
+            icon: Icon(Icons.settings),
           ),
         ],
       ),
@@ -114,6 +112,76 @@ class _PowerPulseAppState extends State<PowerPulseApp> {
             _selectedIndex = index;
           });
         },
+      ),
+    );
+  }
+
+  void _showSettingsMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return Container(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: Icon(Icons.brightness_4),
+                title: Text('Change Theme'),
+                onTap: () {
+                  Provider.of<ThemeProvider>(context, listen: false).toggleTheme();
+                  Navigator.pop(context); // Close the bottom sheet after changing the theme
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.description),
+                title: Text('Terms of Conditions'),
+                onTap: () {
+                  Navigator.pop(context); // Close the bottom sheet
+                  _showTermsOfConditions(context);
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.contact_mail),
+                title: Text('Contact Us'),
+                onTap: () {
+                  Navigator.pop(context); // Close the bottom sheet
+                  _launchEmailForm();
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showTermsOfConditions(BuildContext context) {
+    // Show terms and conditions screen here
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TermsOfConditionsScreen(),
+      ),
+    );
+  }
+
+  void _launchEmailForm() async {
+    Navigator.push(
+    context,
+    MaterialPageRoute(builder: (context) => ContactUsScreen()),
+  );
+  }
+}
+
+class TermsOfConditionsScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Terms of Conditions'),
+      ),
+      body: Center(
+        child: Text('Terms of Conditions content goes here'),
       ),
     );
   }

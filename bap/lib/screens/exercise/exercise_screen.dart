@@ -21,8 +21,6 @@ class ExerciseScreen extends StatelessWidget {
                 SizedBox(height: 8.0),
                 _buildNavigationButton(context, 'New Workout', NewWorkoutScreen()), 
                 SizedBox(height: 8.0),
-                _buildNavigationButton(context, 'New Plan', NewPlanScreen()),
-                SizedBox(height: 8.0),
                 _buildNavigationButton(context, 'Plans', PlansScreen()),
               ],
             ),

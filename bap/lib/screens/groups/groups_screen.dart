@@ -6,7 +6,7 @@ class GroupsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Text('groups'),
+      child: Text('Coming Soon!'),
     );
   }
 }
