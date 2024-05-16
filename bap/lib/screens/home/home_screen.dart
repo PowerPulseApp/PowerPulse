@@ -7,6 +7,9 @@ import 'package:fl_chart/fl_chart.dart'; // Import the line chart widget
 class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    Color linechartColor = Theme.of(context).brightness == Brightness.dark
+        ? Colors.white
+        : Colors.black;
     return Scaffold(
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -55,6 +58,17 @@ class HomeScreen extends StatelessWidget {
           if (snapshot.hasError) {
             return Center(child: Text('Error loading data'));
           } else {
+            List<FlSpot> spots = snapshot.data ?? [];
+            double maxWeight = spots.isNotEmpty
+                ? spots
+                    .map((spot) => spot.y)
+                    .reduce((max, value) => value > max ? value : max)
+                : 0;
+
+            // Set a fixed upper limit for the y-axis
+            double maxY = (maxWeight * 1.166)
+                .ceilToDouble(); // Adjust the multiplier as needed for space
+
             return AspectRatio(
               aspectRatio: 2.0,
               child: Padding(
@@ -62,25 +76,29 @@ class HomeScreen extends StatelessWidget {
                   right: 16,
                   left: 16,
                   top: 16,
-                  bottom: 240,
+                  bottom: 300,
                 ),
                 child: LineChart(
                   LineChartData(
                     lineBarsData: [
                       LineChartBarData(
-                        spots: snapshot.data!,
-                        barWidth: 8,
-                        isCurved: true,
-                        curveSmoothness: 0.25,
-                        preventCurveOverShooting: true,
-                        isStrokeCapRound: true,
-                        dotData: const FlDotData(show: false),
-                      ),
+                          spots: spots,
+                          barWidth: 5,
+                          isCurved: true,
+                          curveSmoothness: 0.25,
+                          preventCurveOverShooting: true,
+                          isStrokeCapRound: true,
+                          dotData: const FlDotData(show: false),
+                          belowBarData: BarAreaData(
+                            show: true,
+                            color: Color.fromARGB(90, 135, 70, 146),
+                          ),
+                          color: Color.fromARGB(255, 135, 70, 146)),
                     ],
                     titlesData: const FlTitlesData(
                       show: true,
                       leftTitles: AxisTitles(
-                        axisNameWidget: Text('weight'),
+                        axisNameWidget: Text('weight in kg'),
                         axisNameSize: 25,
                       ),
                       bottomTitles: AxisTitles(
@@ -88,11 +106,25 @@ class HomeScreen extends StatelessWidget {
                         axisNameSize: 25,
                       ),
                       rightTitles: AxisTitles(
-                        axisNameWidget: Text('weight'),
-                        axisNameSize: 25,
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 50,
+                        ),
                       ),
                       topTitles: AxisTitles(
+                        axisNameWidget:
+                            Text('Total weight over the last 15 workouts'),
+                        axisNameSize: 25,
                         sideTitles: SideTitles(showTitles: false),
+                      ),
+                    ),
+                    minY: 0, // Set a minimum value for the y-axis if needed
+                    maxY: maxY,
+                    clipData: FlClipData.all(),
+                    borderData: FlBorderData(
+                      show: true,
+                      border: Border.all(
+                        width: 3,
                       ),
                     ),
                   ),

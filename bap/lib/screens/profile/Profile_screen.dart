@@ -7,20 +7,16 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key});
-
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-
 class _ProfileScreenState extends State<ProfileScreen> {
   late Stream<User?> _authStateStream; // Declare a stream to hold auth state
   File? _imageFile;
-
 
   @override
   void initState() {
@@ -28,7 +24,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _authStateStream =
         FirebaseAuth.instance.authStateChanges(); // Initialize the stream
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -70,7 +65,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-
   Widget buildProfileWidget(User user) {
     return Center(
       child: Column(
@@ -96,10 +90,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     padding: EdgeInsets.all(4),
-                    child: Icon(
-                      Icons.edit,
-                      color: Colors.white,
-                      size: 20,
+                    child: GestureDetector(
+                      onTap: _changeProfilePicture,
+                      child: Icon(
+                        Icons.edit,
+                        color: Colors.white,
+                        size: 20,
+                      ),
                     ),
                   ),
                 ),
@@ -136,9 +133,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-
   void _changeProfilePicture() async {
-    if (await _requestGalleryPermission()) {
+    bool granted = await _requestGalleryPermission();
+    if (granted) {
       final picker = ImagePicker();
       final pickedFile = await picker.pickImage(source: ImageSource.gallery);
       if (pickedFile != null) {
@@ -149,34 +146,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-
   Future<bool> _requestGalleryPermission() async {
     if (await Permission.photos.request().isGranted) {
       return true;
     } else {
       // If the user denies permission, show a dialog explaining why the permission is necessary
-      showDialog(
-        context: context,
-        builder: (BuildContext context) => AlertDialog(
-          title: Text('Permission Required'),
-          content: Text(
-              'Please grant access to your photo gallery to change your profile picture.'),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: Text('Deny'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: Text('Allow'),
-            ),
-          ],
-        ),
-      );
-      return false;
+      var permissionStatus = await Permission.photos.request();
+      if (permissionStatus.isGranted) {
+        return true;
+      } else {
+        return false;
+      }
     }
   }
-
 
   void _logout() {
     showDialog(
@@ -207,16 +189,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-
   Future<String> _getCurrentUsername(String uid) async {
     try {
       DocumentSnapshot userDoc =
           await FirebaseFirestore.instance.collection('users').doc(uid).get();
 
-
       // Get the username from the document snapshot
       String username = userDoc.get('username');
-
 
       // Return the fetched username
       return username;
@@ -226,8 +205,3 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 }
-
-
-
-
-
