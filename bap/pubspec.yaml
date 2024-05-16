@@ -34,6 +34,8 @@ dependencies:
   url_launcher: ^6.2.6
 
   fl_chart: ^0.68.0
+  device_info: ^2.0.3
+  device_info_plus: ^9.1.2
 
 dev_dependencies:
   flutter_test:

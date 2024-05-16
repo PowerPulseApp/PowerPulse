@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:device_info_plus/device_info_plus.dart'; // Import device_info_plus
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key});
@@ -117,7 +118,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 } else {
                   // If the username is fetched successfully, display it
                   return Text(
-                    '${snapshot.data}',
+'${snapshot.data}',
                     style: GoogleFonts.bebasNeue(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -134,29 +135,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _changeProfilePicture() async {
-    bool granted = await _requestGalleryPermission();
-    if (granted) {
-      final picker = ImagePicker();
-      final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-      if (pickedFile != null) {
-        setState(() {
-          _imageFile = File(pickedFile.path);
-        });
-      }
-    }
-  }
-
-  Future<bool> _requestGalleryPermission() async {
-    if (await Permission.photos.request().isGranted) {
-      return true;
-    } else {
-      // If the user denies permission, show a dialog explaining why the permission is necessary
-      var permissionStatus = await Permission.photos.request();
-      if (permissionStatus.isGranted) {
-        return true;
-      } else {
-        return false;
-      }
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _imageFile = File(pickedFile.path);
+      });
     }
   }
 

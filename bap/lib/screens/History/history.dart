@@ -146,7 +146,7 @@ class HistoryScreen extends StatelessWidget {
 
   Future<void> _deleteWorkout(String userId, String workoutId) async {
     await FirebaseFirestore.instance
-        .collection('done_workout')
+        .collection('users')
         .doc(userId)
         .collection('workouts')
         .doc(workoutId)
