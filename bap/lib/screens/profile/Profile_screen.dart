@@ -6,7 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:device_info_plus/device_info_plus.dart'; // Import device_info_plus
+import 'package:firebase_storage/firebase_storage.dart'; // Import FirebaseStorage
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key});
@@ -18,12 +18,26 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   late Stream<User?> _authStateStream; // Declare a stream to hold auth state
   File? _imageFile;
+  String? _profilePictureUrl;
 
   @override
   void initState() {
     super.initState();
     _authStateStream =
         FirebaseAuth.instance.authStateChanges(); // Initialize the stream
+    _loadProfilePicture();
+  }
+
+  Future<void> _loadProfilePicture() async {
+    try {
+      String uid = FirebaseAuth.instance.currentUser!.uid;
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      setState(() {
+        _profilePictureUrl = userDoc.get('profilePicture');
+      });
+    } catch (e) {
+      print('Error loading profile picture: $e');
+    }
   }
 
   @override
@@ -78,9 +92,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 CircleAvatar(
                   radius: 50,
-                  backgroundImage: _imageFile != null
-                      ? FileImage(_imageFile!)
-                      : AssetImage('assets/pfp.jpg') as ImageProvider<Object>?,
+                  backgroundImage: _profilePictureUrl != null
+                      ? NetworkImage(_profilePictureUrl!)
+                      : _imageFile != null
+                          ? FileImage(_imageFile!)
+                          : AssetImage('assets/pfp.jpg') as ImageProvider<Object>?,
                 ),
                 Positioned(
                   bottom: 0,
@@ -118,7 +134,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 } else {
                   // If the username is fetched successfully, display it
                   return Text(
-'${snapshot.data}',
+                    '${snapshot.data}',
                     style: GoogleFonts.bebasNeue(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -141,6 +157,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
       setState(() {
         _imageFile = File(pickedFile.path);
       });
+      _uploadProfilePicture();
+    }
+  }
+
+  Future<void> _uploadProfilePicture() async {
+    try {
+      String uid = FirebaseAuth.instance.currentUser!.uid;
+      Reference storageReference = FirebaseStorage.instance.ref().child('profile_pictures/$uid.jpg');
+      UploadTask uploadTask = storageReference.putFile(_imageFile!);
+      await uploadTask.whenComplete(() async {
+        String imageUrl = await storageReference.getDownloadURL();
+        // Update the user's document in Firestore with the image URL
+        await FirebaseFirestore.instance.collection('users').doc(uid).update({'profilePicture': imageUrl});
+      });
+    } catch (e) {
+      print('Error uploading profile picture: $e');
     }
   }
 
