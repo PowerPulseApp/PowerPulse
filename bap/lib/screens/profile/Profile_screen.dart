@@ -19,6 +19,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late Stream<User?> _authStateStream; // Declare a stream to hold auth state
   File? _imageFile;
   String? _profilePictureUrl;
+  String? _bio;
+  TextEditingController _bioController =
+      TextEditingController(); // Controller for bio input
+  bool _isEditingBio = false;
 
   @override
   void initState() {
@@ -26,17 +30,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _authStateStream =
         FirebaseAuth.instance.authStateChanges(); // Initialize the stream
     _loadProfilePicture();
+    _loadBio();
   }
 
   Future<void> _loadProfilePicture() async {
     try {
       String uid = FirebaseAuth.instance.currentUser!.uid;
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      DocumentSnapshot userDoc =
+          await FirebaseFirestore.instance.collection('users').doc(uid).get();
       setState(() {
         _profilePictureUrl = userDoc.get('profilePicture');
       });
     } catch (e) {
       print('Error loading profile picture: $e');
+    }
+  }
+
+  Future<void> _loadBio() async {
+    try {
+      String uid = FirebaseAuth.instance.currentUser!.uid;
+      DocumentSnapshot userDoc =
+          await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      setState(() {
+        _bio = userDoc.get('bio');
+      });
+    } catch (e) {
+      print('Error loading bio: $e');
     }
   }
 
@@ -96,7 +115,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ? NetworkImage(_profilePictureUrl!)
                       : _imageFile != null
                           ? FileImage(_imageFile!)
-                          : AssetImage('assets/pfp.jpg') as ImageProvider<Object>?,
+                          : AssetImage('assets/pfp.jpg')
+                              as ImageProvider<Object>?,
                 ),
                 Positioned(
                   bottom: 0,
@@ -133,21 +153,95 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   return Text('User');
                 } else {
                   // If the username is fetched successfully, display it
-                  return Text(
-                    '${snapshot.data}',
-                    style: GoogleFonts.bebasNeue(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  return Column(
+                    children: [
+                      Text(
+                        '${snapshot.data}',
+                        style: GoogleFonts.bebasNeue(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 10),
+                      // Display bio as text or text field based on editing state
+                      Row(
+                        children: [
+                          IconButton(
+                            onPressed:
+                                () {}, // This button is transparent and inactive
+                            icon: Icon(Icons.edit, color: Colors.transparent),
+                          ),
+                          Expanded(
+                            child: _isEditingBio
+                                ? _buildEditableBioWidget()
+                                : _buildNonEditableBioWidget(),
+                          ),
+                          IconButton(
+                            onPressed:
+                                _isEditingBio ? _saveBio : _startEditingBio,
+                            icon: Icon(_isEditingBio ? Icons.save : Icons.edit),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 20),
+                    ],
                   );
                 }
               }
             },
           ),
-          SizedBox(height: 20),
         ],
       ),
     );
+  }
+
+  Widget _buildNonEditableBioWidget() {
+    return Column(
+      children: [
+        Text(
+          _bio ?? 'No bio available',
+          style: TextStyle(fontSize: 16),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEditableBioWidget() {
+    return TextFormField(
+      controller: _bioController,
+      decoration: InputDecoration(
+        hintText: 'Enter your bio',
+        border: OutlineInputBorder(),
+      ),
+      maxLines: null,
+    );
+  }
+
+  void _startEditingBio() {
+    setState(() {
+      _isEditingBio = true;
+      _bioController.text = _bio ?? '';
+    });
+  }
+
+  void _saveBio() async {
+    try {
+      String uid = FirebaseAuth.instance.currentUser!.uid;
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .update({'bio': _bioController.text});
+      setState(() {
+        _bio = _bioController.text;
+        _isEditingBio = false;
+      });
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Bio updated successfully')));
+    } catch (e) {
+      print('Error updating bio: $e');
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Failed to update bio')));
+    }
   }
 
   void _changeProfilePicture() async {
@@ -164,12 +258,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _uploadProfilePicture() async {
     try {
       String uid = FirebaseAuth.instance.currentUser!.uid;
-      Reference storageReference = FirebaseStorage.instance.ref().child('profile_pictures/$uid.jpg');
+      Reference storageReference =
+          FirebaseStorage.instance.ref().child('profile_pictures/$uid.jpg');
       UploadTask uploadTask = storageReference.putFile(_imageFile!);
       await uploadTask.whenComplete(() async {
         String imageUrl = await storageReference.getDownloadURL();
         // Update the user's document in Firestore with the image URL
-        await FirebaseFirestore.instance.collection('users').doc(uid).update({'profilePicture': imageUrl});
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(uid)
+            .update({'profilePicture': imageUrl});
       });
     } catch (e) {
       print('Error uploading profile picture: $e');

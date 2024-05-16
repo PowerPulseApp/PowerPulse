@@ -3,46 +3,100 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:video_player/video_player.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 
-class ExercisesScreen extends StatelessWidget {
+class ExercisesScreen extends StatefulWidget {
+  @override
+  _ExercisesScreenState createState() => _ExercisesScreenState();
+}
+
+class _ExercisesScreenState extends State<ExercisesScreen> {
+  late TextEditingController _searchController;
+  late Stream<QuerySnapshot> _exercisesStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+    _exercisesStream =
+        FirebaseFirestore.instance.collection('exercises').snapshots();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-     Color iconColor = Theme.of(context).iconTheme.color!;
+    Color iconColor = Theme.of(context).iconTheme.color!;
     Color textColor = Theme.of(context).textTheme.bodyText2!.color!;
     return Scaffold(
       appBar: AppBar(
-        title: Text('Exercise List', style: TextStyle(color: textColor),),
+        title: Text(
+          'Exercise List',
+          style: TextStyle(color: textColor),
+        ),
         backgroundColor: Colors.transparent,
       ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('exercises').snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return Text('Error: ${snapshot.error}');
-          }
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return CircularProgressIndicator();
-          }
-          final exercises = snapshot.data!.docs;
-          return ListView.builder(
-            itemCount: exercises.length,
-            itemBuilder: (BuildContext context, int index) {
-              final exercise = exercises[index];
-              final exerciseData = exercise.data() as Map<String, dynamic>;
-              final exerciseName =
-                  exerciseData['name'] ?? 'Exercise Name Not Available';
-              final videoUrl = exerciseData['videoUrl'];
-              final exerciseDescription = exerciseData['description'] ?? 'No description available';
-              return ExerciseTile(
-                exerciseName: exerciseName,
-                videoUrl: videoUrl,
-                exerciseDescription: exerciseDescription,
-                onExerciseSelected: (selectedExercise) {
-                  Navigator.pop(context, selectedExercise);
-                },
-              );
-            },
-          );
-        },
+      body: Column(
+        children: [
+          Padding(
+            padding: EdgeInsets.all(8.0),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Search Exercises...',
+                prefixIcon: Icon(Icons.search),
+              ),
+              onChanged: (query) {
+                setState(() {
+                  _exercisesStream = FirebaseFirestore.instance
+                      .collection('exercises')
+                      .where('name', isGreaterThanOrEqualTo: query)
+                      .where('name',
+                          isLessThan:
+                              query + 'z') // Assuming alphabetical ordering
+                      .snapshots();
+                });
+              },
+            ),
+          ),
+          Expanded(
+            child: StreamBuilder<QuerySnapshot>(
+              stream: _exercisesStream,
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return Text('Error: ${snapshot.error}');
+                }
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return CircularProgressIndicator();
+                }
+                final exercises = snapshot.data!.docs;
+                return ListView.builder(
+                  itemCount: exercises.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    final exercise = exercises[index];
+                    final exerciseData =
+                        exercise.data() as Map<String, dynamic>;
+                    final exerciseName =
+                        exerciseData['name'] ?? 'Exercise Name Not Available';
+                    final videoUrl = exerciseData['videoUrl'];
+                    final exerciseDescription = exerciseData['description'] ??
+                        'No description available';
+                    return ExerciseTile(
+                      exerciseName: exerciseName,
+                      videoUrl: videoUrl,
+                      exerciseDescription: exerciseDescription,
+                      onExerciseSelected: (selectedExercise) {
+                        Navigator.pop(context, selectedExercise);
+                      },
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -81,7 +135,8 @@ class ExerciseTile extends StatelessWidget {
           IconButton(
             icon: Icon(Icons.add),
             onPressed: () {
-              onExerciseSelected({'name': exerciseName, 'description': formattedDescription});
+              onExerciseSelected(
+                  {'name': exerciseName, 'description': formattedDescription});
             },
           ),
         ],
@@ -89,14 +144,16 @@ class ExerciseTile extends StatelessWidget {
     );
   }
 
-  void _playExerciseVideo(BuildContext context, String? videoUrl, String description) async {
+  void _playExerciseVideo(
+      BuildContext context, String? videoUrl, String description) async {
     if (videoUrl != null) {
       final firebaseStorageRef =
           firebase_storage.FirebaseStorage.instance.refFromURL(videoUrl);
       String downloadURL = await firebaseStorageRef.getDownloadURL();
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => VideoPlayerScreen(downloadURL, description)),
+        MaterialPageRoute(
+            builder: (context) => VideoPlayerScreen(downloadURL, description)),
       );
     }
   }
@@ -121,7 +178,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   @override
   void initState() {
     super.initState();
-    _controller = VideoPlayerController.network(  
+    _controller = VideoPlayerController.network(
       widget.videoUrl,
     )..addListener(() {
         setState(() {
@@ -143,7 +200,10 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     Color textColor = Theme.of(context).textTheme.bodyText2!.color!;
     return Scaffold(
       appBar: AppBar(
-        title: Text('Info', style: TextStyle(color: textColor),),
+        title: Text(
+          'Info',
+          style: TextStyle(color: textColor),
+        ),
         backgroundColor: Colors.transparent,
       ),
       body: SingleChildScrollView(
@@ -163,7 +223,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                     Slider(
                       value: _sliderValue,
                       min: 0,
-                      max: _controller.value.duration?.inSeconds.toDouble() ?? 0,
+                      max:
+                          _controller.value.duration?.inSeconds.toDouble() ?? 0,
                       onChanged: (value) {
                         setState(() {
                           _sliderValue = value;
@@ -173,7 +234,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                     ),
                     Padding(
                       padding: EdgeInsets.all(8),
-                      child: Text(widget.description, style: TextStyle(fontSize: 16, color: textColor)),
+                      child: Text(widget.description,
+                          style: TextStyle(fontSize: 16, color: textColor)),
                     ),
                   ],
                 ),

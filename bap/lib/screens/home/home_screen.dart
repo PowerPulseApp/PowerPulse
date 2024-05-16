@@ -113,7 +113,7 @@ class HomeScreen extends StatelessWidget {
                       ),
                       topTitles: AxisTitles(
                         axisNameWidget:
-                            Text('Total weight over the last 15 workouts'),
+                            Text('Total weight over the last 30 workouts'),
                         axisNameSize: 25,
                         sideTitles: SideTitles(showTitles: false),
                       ),
@@ -146,7 +146,7 @@ class HomeScreen extends StatelessWidget {
             .doc(user.uid)
             .collection('workouts')
             .orderBy('timestamp', descending: true)
-            .limit(15)
+            .limit(30)
             .get();
 
         List<FlSpot> spots = [];
