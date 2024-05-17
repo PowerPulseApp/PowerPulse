@@ -308,6 +308,13 @@ class JoinGroupScreen extends StatelessWidget {
   }
 }
 
+/*
+this comment is to make the code more readable and separate the groupsdetailsscreen from the rest of the code
+.
+.
+.
+*/
+
 class GroupDetailsScreen extends StatelessWidget {
   final String groupName;
 
@@ -332,17 +339,6 @@ class GroupDetailsScreen extends StatelessWidget {
             },
           ),
           IconButton(
-            icon: Icon(Icons.bar_chart),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => LeaderboardScreen(groupName),
-                ),
-              );
-            },
-          ),
-          IconButton(
             icon: Icon(Icons.exit_to_app),
             onPressed: () {
               _leaveGroup(context, groupName);
@@ -350,8 +346,30 @@ class GroupDetailsScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: Center(
-        child: Text('Details of group: $groupName'),
+      body: Stack(
+        children: [
+          Positioned(
+            top: 10,
+            left: 10,
+            child: IconButton(
+              icon: Icon(Icons.bar_chart),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => LeaderboardScreen(groupName),
+                  ),
+                );
+              },
+            ),
+          ),
+          Center(
+            child: Text(
+              'Group Details',
+              style: TextStyle(fontSize: 24),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -394,6 +412,13 @@ class GroupDetailsScreen extends StatelessWidget {
     }
   }
 }
+
+/*
+this comment is to make the code more readable and separate the groupsdetailsscreen from the rest of the code
+.
+.
+.
+*/
 
 class GroupMembersScreen extends StatelessWidget {
   final String groupName;
@@ -484,6 +509,12 @@ class GroupMembersScreen extends StatelessWidget {
   }
 }
 
+/*
+.
+Leaderboards stuff 
+.
+*/
+
 class LeaderboardScreen extends StatelessWidget {
   final String groupName;
 
@@ -500,39 +531,102 @@ class LeaderboardScreen extends StatelessWidget {
   }
 
   Widget _buildLeaderboard(String groupName) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('groups')
-          .doc(groupName)
-          .collection('leaderboard')
-          .orderBy('totalWeight', descending: true)
-          .snapshots(),
+    return FutureBuilder<DocumentSnapshot>(
+      future:
+          FirebaseFirestore.instance.collection('groups').doc(groupName).get(),
       builder: (context, snapshot) {
-        if (snapshot.hasData) {
-          List<Widget> leaderboardTiles = [];
-          snapshot.data!.docs.asMap().forEach((index, doc) {
-            final userData = doc.data() as Map<String, dynamic>;
-            final username = userData['username'];
-            final totalWeight = userData['totalWeight'];
-
-            leaderboardTiles.add(ListTile(
-              title: Text('$username'),
-              trailing: Text('$totalWeight kg'),
-            ));
-          });
-          return ListView(
-            children: leaderboardTiles,
-          );
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
         } else if (snapshot.hasError) {
-          return Text('Error: ${snapshot.error}');
-        } else {
-          return Center(
-            child: CircularProgressIndicator(),
+          return Center(child: Text('Error: ${snapshot.error}'));
+        } else if (snapshot.hasData) {
+          var groupData = snapshot.data!.data() as Map<String, dynamic>;
+          List<dynamic> members = groupData['members'];
+
+          return FutureBuilder(
+            future: _loadLeaderboardData(members),
+            builder:
+                (context, AsyncSnapshot<List<Widget>> leaderboardSnapshot) {
+              if (leaderboardSnapshot.connectionState ==
+                  ConnectionState.waiting) {
+                return Center(child: CircularProgressIndicator());
+              } else if (leaderboardSnapshot.hasError) {
+                return Center(
+                    child: Text('Error: ${leaderboardSnapshot.error}'));
+              } else {
+                return ListView(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Text(
+                        'Total weight lifted over last 30 days',
+                        style: TextStyle(
+                            fontSize: 24, fontWeight: FontWeight.bold),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    ...leaderboardSnapshot.data!,
+                  ],
+                );
+              }
+            },
           );
+        } else {
+          return Center(child: Text('No data found'));
         }
       },
     );
   }
+
+  Future<List<Widget>> _loadLeaderboardData(List<dynamic> members) async {
+    List<_LeaderboardEntry> leaderboardEntries = [];
+    final now = DateTime.now();
+    final thirtyDaysAgo = now.subtract(Duration(days: 30));
+
+    for (var memberId in members) {
+      final workoutSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(memberId)
+          .collection('workouts')
+          .where('timestamp', isGreaterThanOrEqualTo: thirtyDaysAgo)
+          .get();
+
+      double totalWeight = 0;
+      for (var workoutDoc in workoutSnapshot.docs) {
+        final workoutData = workoutDoc.data() as Map<String, dynamic>;
+        totalWeight += workoutData['totalWeight'] ?? 0;
+      }
+
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(memberId)
+          .get();
+
+      final userData = userDoc.data() as Map<String, dynamic>;
+      final username = userData['username'];
+
+      leaderboardEntries.add(_LeaderboardEntry(username, totalWeight));
+    }
+
+    leaderboardEntries.sort((a, b) => b.totalWeight.compareTo(a.totalWeight));
+
+    List<Widget> leaderboardTiles = [];
+    for (int i = 0; i < leaderboardEntries.length; i++) {
+      leaderboardTiles.add(ListTile(
+        title: Text('${i + 1}. ${leaderboardEntries[i].username}'),
+        trailing: Text('${leaderboardEntries[i].totalWeight} kg'),
+      ));
+    }
+
+    return leaderboardTiles;
+  }
+}
+
+class _LeaderboardEntry {
+  final String username;
+  final double totalWeight;
+
+  _LeaderboardEntry(this.username, this.totalWeight);
 }
 
 void main() {
