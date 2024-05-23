@@ -1,3 +1,4 @@
+import 'package:bap/screens/groups/other_profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -439,7 +440,6 @@ class GroupMembersScreen extends StatelessWidget {
         builder: (context, groupSnapshot) {
           if (groupSnapshot.hasData) {
             List<String> memberIds = [];
-            List<String> memberUsernames = [];
             final groupData =
                 groupSnapshot.data!.data() as Map<String, dynamic>;
             if (groupData.containsKey('members')) {
@@ -457,20 +457,23 @@ class GroupMembersScreen extends StatelessWidget {
                     child: Text('Error: ${userSnapshot.error}'),
                   );
                 } else {
-                  memberUsernames = userSnapshot.data!;
+                  List<String> memberUsernames = userSnapshot.data!;
                   return ListView.builder(
                     itemCount: memberUsernames.length,
                     itemBuilder: (context, index) {
-                      return Container(
-                        margin: EdgeInsets.symmetric(vertical: 4),
-                        padding: EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: ListTile(
-                          title: Text(memberUsernames[index]),
-                        ),
+                      String memberId = memberIds[index];
+                      String memberUsername = memberUsernames[index];
+                      return ListTile(
+                        title: Text(memberUsername),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  OtherProfileScreen(userId: memberId),
+                            ),
+                          );
+                        },
                       );
                     },
                   );

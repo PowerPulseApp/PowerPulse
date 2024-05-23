@@ -7,9 +7,6 @@ import 'package:fl_chart/fl_chart.dart'; // Import the line chart widget
 class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    Color linechartColor = Theme.of(context).brightness == Brightness.dark
-        ? Colors.white
-        : Colors.black;
     return Scaffold(
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
