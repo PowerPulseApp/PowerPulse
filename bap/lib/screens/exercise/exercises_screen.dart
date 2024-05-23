@@ -28,7 +28,6 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    Color iconColor = Theme.of(context).iconTheme.color!;
     Color textColor = Theme.of(context).textTheme.bodyText2!.color!;
     return Scaffold(
       appBar: AppBar(
@@ -172,7 +171,6 @@ class VideoPlayerScreen extends StatefulWidget {
 class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   late VideoPlayerController _controller;
   late Future<void> _initializeVideoPlayerFuture;
-  double _videoAspectRatio = 16 / 9; // Default aspect ratio
   double _sliderValue = 0.0; // Initial value for the slider
 
   @override
@@ -196,7 +194,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    Color iconColor = Theme.of(context).iconTheme.color!;
     Color textColor = Theme.of(context).textTheme.bodyText2!.color!;
     return Scaffold(
       appBar: AppBar(

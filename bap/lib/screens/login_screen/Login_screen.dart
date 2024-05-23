@@ -1,7 +1,6 @@
 import 'package:bap/main.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:bap/screens/profile/Profile_screen.dart';
 import 'package:bap/screens/login_screen/reset_password.dart';
 import 'package:bap/screens/login_screen/signup_screen.dart';
 import 'package:bap/reusable_widgets/reusable_widget.dart';

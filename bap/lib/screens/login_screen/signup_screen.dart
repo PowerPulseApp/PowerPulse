@@ -1,4 +1,3 @@
-import 'package:bap/screens/profile/Profile_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:bap/main.dart';
@@ -19,7 +18,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
   TextEditingController _passwordTextController = TextEditingController();
   TextEditingController _emailTextController = TextEditingController();
   TextEditingController _userNameTextController = TextEditingController();
-  final GlobalKey<FormState> _key = GlobalKey<FormState>();
 
 
   String _userNameError = '';

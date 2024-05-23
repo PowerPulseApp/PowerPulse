@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'exercises_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -368,8 +366,3 @@ class _NewWorkoutScreenState extends State<NewWorkoutScreen> {
     );
   }
 }
-
-
-
-
-

@@ -8,8 +8,9 @@ import 'package:bap/screens/History/history.dart';
 import 'package:bap/screens/groups/groups_screen.dart';
 import 'package:bap/screens/profile/profile_screen.dart';
 import 'package:bap/themes/theme_provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:bap/terms_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -57,14 +58,16 @@ class _PowerPulseAppState extends State<PowerPulseApp> {
   ];
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  final GlobalKey<_PowerPulseAppState> _appStateKey = GlobalKey();
 
   @override
   Widget build(BuildContext context) {
+     Color selectedItemColor =
+        Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black;
+
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(
-        leading: Container(padding: EdgeInsets.all(0), child: Image.asset('assets/logo.png'),),
+        leading: Padding(padding: const EdgeInsets.only(left: 14.0),child: Text('PP',style: GoogleFonts.blackOpsOne(fontSize: 27),),),
         actions: [
           IconButton(
             onPressed: () {
@@ -85,6 +88,7 @@ class _PowerPulseAppState extends State<PowerPulseApp> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         type: BottomNavigationBarType.fixed,
+        selectedItemColor: selectedItemColor,
         items: [
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
@@ -170,19 +174,5 @@ class _PowerPulseAppState extends State<PowerPulseApp> {
     context,
     MaterialPageRoute(builder: (context) => ContactUsScreen()),
   );
-  }
-}
-
-class TermsOfConditionsScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Terms of Conditions'),
-      ),
-      body: Center(
-        child: Text('Terms of Conditions content goes here'),
-      ),
-    );
   }
 }
