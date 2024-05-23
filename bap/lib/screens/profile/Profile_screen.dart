@@ -19,6 +19,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   File? _imageFile;
   String? _profilePictureUrl;
   String? _bio;
+  DateTime? _creationDate;
   TextEditingController _bioController =
       TextEditingController(); // Controller for bio input
   bool _isEditingBio = false;
@@ -30,6 +31,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         FirebaseAuth.instance.authStateChanges(); // Initialize the stream
     _loadProfilePicture();
     _loadBio();
+    _loadCreationDate();
   }
 
   Future<void> _loadProfilePicture() async {
@@ -55,6 +57,57 @@ class _ProfileScreenState extends State<ProfileScreen> {
       });
     } catch (e) {
       print('Error loading bio: $e');
+    }
+  }
+
+  Future<void> _loadCreationDate() async {
+    try {
+      User? user = FirebaseAuth.instance.currentUser;
+      setState(() {
+        _creationDate = user?.metadata.creationTime;
+      });
+    } catch (e) {
+      print('Error loading creation date: $e');
+    }
+  }
+
+  Future<double> _calculateTotalWeightLifted() async {
+    try {
+      String uid = FirebaseAuth.instance.currentUser!.uid;
+      final workoutSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('workouts')
+          .get();
+
+      double totalWeight = 0;
+      for (var doc in workoutSnapshot.docs) {
+        totalWeight += doc.get('totalWeight');
+      }
+      return totalWeight / 1000; // Convert kg to tons
+    } catch (e) {
+      print('Error calculating total weight lifted: $e');
+      return 0;
+    }
+  }
+
+  Future<double> _calculateTotalWorkoutTime() async {
+    try {
+      String uid = FirebaseAuth.instance.currentUser!.uid;
+      final workoutSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('workouts')
+          .get();
+
+      double totalTime = 0;
+      for (var doc in workoutSnapshot.docs) {
+        totalTime += doc.get('totalWorkoutTime');
+      }
+      return totalTime / 60.0 / 60.0;
+    } catch (e) {
+      print('Error calculating total workout time: $e');
+      return 0;
     }
   }
 
@@ -182,7 +235,54 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         ],
                       ),
+                      SizedBox(height: 10),
+                      if (_creationDate != null)
+                        Text(
+                          'Member since: ${_creationDate!.toLocal().toString().split(' ')[0]}',
+                          style: TextStyle(
+                            fontSize: 14,
+                          ),
+                        ),
                       SizedBox(height: 20),
+                      FutureBuilder<List<double>>(
+                        future: Future.wait([
+                          _calculateTotalWeightLifted(),
+                          _calculateTotalWorkoutTime()
+                        ]),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            // While the data is being fetched, display a loading indicator
+                            return CircularProgressIndicator();
+                          } else {
+                            if (snapshot.hasError) {
+                              // If an error occurs while fetching the data, display an error message
+                              return Text('Error calculating workout data');
+                            } else {
+                              double totalWeightLifted = snapshot.data?[0] ?? 0;
+                              double totalWorkoutTime = snapshot.data?[1] ?? 0;
+                              return DataTable(
+                                columns: [
+                                  DataColumn(label: Text('')),
+                                  DataColumn(label: Text('')),
+                                ],
+                                rows: [
+                                  DataRow(cells: [
+                                    DataCell(Text('Weight lifted overall')),
+                                    DataCell(Text(
+                                        '${totalWeightLifted.toStringAsFixed(2)} tons')),
+                                  ]),
+                                  DataRow(cells: [
+                                    DataCell(Text('Overall workout time')),
+                                    DataCell(Text(
+                                        '${totalWorkoutTime.toStringAsFixed(2)} hours')), // Adjust if time needs conversion
+                                  ]),
+                                ],
+                              );
+                            }
+                          }
+                        },
+                      ),
                     ],
                   );
                 }
