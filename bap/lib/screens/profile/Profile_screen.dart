@@ -111,6 +111,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  Future<int> _calculateTotalWorkouts() async {
+    try {
+      String uid = FirebaseAuth.instance.currentUser!.uid;
+      final workoutSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('workouts')
+          .get();
+
+      // Return the total number of documents (workouts) in the collection
+      return workoutSnapshot.size;
+    } catch (e) {
+      print('Error calculating total workouts: $e');
+      return 0;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -244,10 +261,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         ),
                       SizedBox(height: 20),
-                      FutureBuilder<List<double>>(
+                      FutureBuilder<List<dynamic>>(
                         future: Future.wait([
                           _calculateTotalWeightLifted(),
-                          _calculateTotalWorkoutTime()
+                          _calculateTotalWorkoutTime(),
+                          _calculateTotalWorkouts(),
                         ]),
                         builder: (context, snapshot) {
                           if (snapshot.connectionState ==
@@ -261,6 +279,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             } else {
                               double totalWeightLifted = snapshot.data?[0] ?? 0;
                               double totalWorkoutTime = snapshot.data?[1] ?? 0;
+                              int totalWorkouts = snapshot.data?[2] ?? 0;
                               return DataTable(
                                 columns: [
                                   DataColumn(label: Text('')),
@@ -268,14 +287,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ],
                                 rows: [
                                   DataRow(cells: [
-                                    DataCell(Text('Weight lifted overall')),
-                                    DataCell(Text(
-                                        '${totalWeightLifted.toStringAsFixed(2)} tons')),
+                                    DataCell(Text('Total Workouts')),
+                                    DataCell(Text(totalWorkouts.toString())),
                                   ]),
                                   DataRow(cells: [
                                     DataCell(Text('Overall workout time')),
                                     DataCell(Text(
-                                        '${totalWorkoutTime.toStringAsFixed(2)} hours')), // Adjust if time needs conversion
+                                        '${totalWorkoutTime.toStringAsFixed(2)} hours')),
+                                  ]),
+                                  DataRow(cells: [
+                                    DataCell(Text('Weight lifted overall')),
+                                    DataCell(Text(
+                                        '${totalWeightLifted.toStringAsFixed(2)} tons')),
                                   ]),
                                 ],
                               );
@@ -393,6 +416,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               }).catchError((error) {
                 print("Sign out failed: $error");
               });
+              Navigator.pop(context); // Close
+
               Navigator.pop(context); // Close the dialog
             },
             child: Text('Logout'),

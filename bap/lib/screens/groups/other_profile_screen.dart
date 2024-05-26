@@ -104,6 +104,22 @@ class _OtherProfileScreenState extends State<OtherProfileScreen> {
     }
   }
 
+  Future<int> _calculateTotalWorkouts() async {
+    try {
+      final workoutSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(widget.userId)
+          .collection('workouts')
+          .get();
+
+      // Return the total number of documents (workouts) in the collection
+      return workoutSnapshot.size;
+    } catch (e) {
+      print('Error calculating total workouts: $e');
+      return 0;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -157,10 +173,11 @@ class _OtherProfileScreenState extends State<OtherProfileScreen> {
                             ),
                           ),
                         SizedBox(height: 20),
-                        FutureBuilder<List<double>>(
+                        FutureBuilder<List>(
                           future: Future.wait([
                             _calculateTotalWeightLifted(),
-                            _calculateTotalWorkoutTime()
+                            _calculateTotalWorkoutTime(),
+                            _calculateTotalWorkouts()
                           ]),
                           builder: (context, snapshot) {
                             if (snapshot.connectionState ==
@@ -174,6 +191,7 @@ class _OtherProfileScreenState extends State<OtherProfileScreen> {
                                     snapshot.data?[0] ?? 0;
                                 double totalWorkoutTime =
                                     snapshot.data?[1] ?? 0;
+                                int totalWorkouts = snapshot.data?[2] ?? 0;
                                 return DataTable(
                                   columns: [
                                     DataColumn(label: Text('')),
@@ -181,14 +199,18 @@ class _OtherProfileScreenState extends State<OtherProfileScreen> {
                                   ],
                                   rows: [
                                     DataRow(cells: [
-                                      DataCell(Text('Weight lifted overall')),
-                                      DataCell(Text(
-                                          '${totalWeightLifted.toStringAsFixed(2)} tons')),
+                                      DataCell(Text('Total Workouts')),
+                                      DataCell(Text(totalWorkouts.toString())),
                                     ]),
                                     DataRow(cells: [
                                       DataCell(Text('Overall workout time')),
                                       DataCell(Text(
                                           '${totalWorkoutTime.toStringAsFixed(2)} hours')),
+                                    ]),
+                                    DataRow(cells: [
+                                      DataCell(Text('Weight lifted overall')),
+                                      DataCell(Text(
+                                          '${totalWeightLifted.toStringAsFixed(2)} tons')),
                                     ]),
                                   ],
                                 );

@@ -157,42 +157,8 @@ class CreateGroupScreen extends StatelessWidget {
             ),
             SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () {
-                // Get the current user's UID
-                String? currentUserUid = FirebaseAuth.instance.currentUser?.uid;
-
-                if (currentUserUid != null) {
-                  // Save the group details to Firestore
-                  String groupName = groupNameController.text
-                      .trim(); // Trim any leading or trailing whitespace
-                  FirebaseFirestore.instance
-                      .collection('groups')
-                      .doc(groupName)
-                      .set({
-                    'name': groupName,
-                    'key': groupKeyController.text,
-                    'creatorUid': currentUserUid,
-                    'members': [currentUserUid], // Start with creator as member
-                  }).then((_) {
-                    // Add the group to the user's groups
-                    FirebaseFirestore.instance
-                        .collection('users')
-                        .doc(currentUserUid)
-                        .collection('groups')
-                        .doc(groupName)
-                        .set({
-                      'name': groupName,
-                      'key': groupKeyController.text,
-                    });
-
-                    // Success, navigate back to groups screen
-                    Navigator.pop(context);
-                  }).catchError((error) {
-                    // Handle error
-                    print("Failed to create group: $error");
-                    // Optionally, show an error message to the user
-                  });
-                }
+              onPressed: () async {
+                await _createGroup(context);
               },
               child: Text('Create Group'),
             ),
@@ -200,6 +166,89 @@ class CreateGroupScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _createGroup(BuildContext context) async {
+    String groupName = groupNameController.text.trim();
+    String groupKey = groupKeyController.text.trim();
+
+    if (groupName.isEmpty || groupKey.isEmpty) {
+      // Show error message if any field is empty
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please fill in all fields.'),
+        ),
+      );
+      return;
+    }
+
+    try {
+      // Check if group name already exists
+      DocumentSnapshot groupSnapshot = await FirebaseFirestore.instance
+          .collection('groups')
+          .doc(groupName)
+          .get();
+
+      if (groupSnapshot.exists) {
+        // Show error message if group name already exists
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'Group name already exists. Please choose a different name.'),
+          ),
+        );
+        return;
+      }
+
+      // Get current user's UID
+      String? currentUserUid = FirebaseAuth.instance.currentUser?.uid;
+      if (currentUserUid == null) {
+        throw FirebaseAuthException(
+          code: 'user-not-logged-in',
+          message: 'User not logged in.',
+        );
+      }
+
+      // Create the new group
+      await FirebaseFirestore.instance.collection('groups').doc(groupName).set({
+        'key': groupKey,
+        'creatorUid': currentUserUid,
+        'members': [currentUserUid],
+      });
+
+      // Add group to user's groups collection
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUserUid)
+          .collection('groups')
+          .doc(groupName)
+          .set({
+        'key': groupKey,
+        'name': groupName,
+      });
+
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Group created successfully.'),
+        ),
+      );
+
+      // Navigate to the newly created group
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => GroupDetailsScreen(groupName),
+        ),
+      );
+    } catch (error) {
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to create group: $error'),
+        ),
+      );
+    }
   }
 }
 
