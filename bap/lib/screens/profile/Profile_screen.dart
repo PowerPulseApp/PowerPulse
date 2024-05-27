@@ -23,6 +23,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   TextEditingController _bioController =
       TextEditingController(); // Controller for bio input
   bool _isEditingBio = false;
+// List to hold group members
 
   @override
   void initState() {
@@ -125,6 +126,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (e) {
       print('Error calculating total workouts: $e');
       return 0;
+    }
+  }
+
+  Future<void> _removeMember(String memberId) async {
+    try {
+      String groupId = FirebaseAuth.instance.currentUser!.uid;
+      await FirebaseFirestore.instance
+          .collection('groups')
+          .doc(groupId)
+          .update({
+        'members': FieldValue.arrayRemove([
+          {'uid': memberId}
+        ])
+      });
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Member removed successfully')));
+    } catch (e) {
+      print('Error removing member: $e');
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Failed to remove member')));
     }
   }
 
@@ -416,8 +437,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               }).catchError((error) {
                 print("Sign out failed: $error");
               });
-              Navigator.pop(context); // Close
-
               Navigator.pop(context); // Close the dialog
             },
             child: Text('Logout'),

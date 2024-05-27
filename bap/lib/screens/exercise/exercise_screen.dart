@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:bap/screens/exercise/plans_screen.dart';
 import 'package:bap/screens/exercise/new_workout_screen.dart';
 
 class ExerciseScreen extends StatelessWidget {
@@ -13,12 +12,13 @@ class ExerciseScreen extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                LogoWidget(imagePath: "assets/eddie.png", color: Color.fromARGB(255, 135, 70, 146),),
+                LogoWidget(
+                  imagePath: "assets/eddie.png",
+                  color: Color.fromARGB(255, 135, 70, 146),
+                ),
                 SizedBox(height: 8.0),
                 _buildNavigationButton(
                     context, 'New Workout', NewWorkoutScreen()),
-                SizedBox(height: 8.0),
-                _buildNavigationButton(context, 'Plans', PlansScreen()),
               ],
             ),
           ),
@@ -69,7 +69,8 @@ class LogoWidget extends StatelessWidget {
   final String imagePath;
   final Color color;
 
-  const LogoWidget({Key? key, required this.imagePath, required this.color}) : super(key: key);
+  const LogoWidget({Key? key, required this.imagePath, required this.color})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {

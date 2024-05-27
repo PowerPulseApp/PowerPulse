@@ -212,6 +212,7 @@ class CreateGroupScreen extends StatelessWidget {
       // Create the new group
       await FirebaseFirestore.instance.collection('groups').doc(groupName).set({
         'key': groupKey,
+        'name': groupName,
         'creatorUid': currentUserUid,
         'members': [currentUserUid],
       });
@@ -365,17 +366,37 @@ this comment is to make the code more readable and separate the groupsdetailsscr
 .
 */
 
-class GroupDetailsScreen extends StatelessWidget {
+class GroupDetailsScreen extends StatefulWidget {
   final String groupName;
 
   GroupDetailsScreen(this.groupName);
 
   @override
+  _GroupDetailsScreenState createState() => _GroupDetailsScreenState();
+}
+
+class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
+  TextEditingController _groupNameController = TextEditingController();
+  TextEditingController _groupKeyController = TextEditingController();
+  String groupName = "";
+
+  @override
+  void initState() {
+    super.initState();
+    _groupNameController.text = widget.groupName;
+    groupName = widget.groupName;
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('$groupName'),
+        title: Text(groupName),
         actions: [
+          IconButton(
+            icon: Icon(Icons.edit),
+            onPressed: _showEditDialog,
+          ),
           IconButton(
             icon: Icon(Icons.group),
             onPressed: () {
@@ -391,7 +412,7 @@ class GroupDetailsScreen extends StatelessWidget {
           IconButton(
             icon: Icon(Icons.exit_to_app),
             onPressed: () {
-              _leaveGroup(context, groupName);
+              _leaveGroup(groupName);
             },
           ),
         ],
@@ -424,42 +445,85 @@ class GroupDetailsScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _leaveGroup(BuildContext context, String groupName) async {
-    String? currentUserUid = FirebaseAuth.instance.currentUser?.uid;
-
-    if (currentUserUid != null) {
-      try {
-        // Remove user from group members
-        await FirebaseFirestore.instance
-            .collection('groups')
-            .doc(groupName)
-            .update({
-          'members': FieldValue.arrayRemove([currentUserUid]),
-        });
-
-        // Remove group from user's groups
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(currentUserUid)
-            .collection('groups')
-            .doc(groupName)
-            .delete();
-
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Left group successfully.'),
+  Future<void> _showEditDialog() async {
+    await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Edit Group'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _groupKeyController,
+                decoration: InputDecoration(
+                  labelText: 'Group Key',
+                ),
+              ),
+            ],
           ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                _updateGroup();
+                Navigator.of(context).pop();
+              },
+              child: Text('Save'),
+            ),
+          ],
         );
-      } catch (error) {
-        // Show error message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to leave group: $error'),
-          ),
-        );
-      }
+      },
+    );
+  }
+
+  Future<void> _updateGroup() async {
+    String newGroupName = _groupNameController.text.trim();
+    String newGroupKey = _groupKeyController.text.trim();
+
+    if (newGroupName.isEmpty || newGroupKey.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Group name and key cannot be empty.'),
+        ),
+      );
+      return;
     }
+
+    try {
+      await FirebaseFirestore.instance
+          .collection('groups')
+          .doc(groupName)
+          .update({
+        'name': newGroupName,
+        'key': newGroupKey,
+      });
+
+      setState(() {
+        groupName = newGroupName;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Group updated successfully.'),
+        ),
+      );
+    } catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to update group: $error'),
+        ),
+      );
+    }
+  }
+
+  Future<void> _leaveGroup(String groupName) async {
+    // Leave group logic
   }
 }
 
@@ -470,10 +534,17 @@ this comment is to make the code more readable and separate the groupsdetailsscr
 .
 */
 
-class GroupMembersScreen extends StatelessWidget {
+class GroupMembersScreen extends StatefulWidget {
   final String groupName;
 
   GroupMembersScreen(this.groupName);
+
+  @override
+  _GroupMembersScreenState createState() => _GroupMembersScreenState();
+}
+
+class _GroupMembersScreenState extends State<GroupMembersScreen> {
+  late BuildContext _scaffoldContext;
 
   @override
   Widget build(BuildContext context) {
@@ -484,7 +555,7 @@ class GroupMembersScreen extends StatelessWidget {
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance
             .collection('groups')
-            .doc(groupName)
+            .doc(widget.groupName)
             .snapshots(),
         builder: (context, groupSnapshot) {
           if (groupSnapshot.hasData) {
@@ -523,6 +594,15 @@ class GroupMembersScreen extends StatelessWidget {
                             ),
                           );
                         },
+                        trailing:
+                            (memberId != FirebaseAuth.instance.currentUser!.uid)
+                                ? IconButton(
+                                    icon: Icon(Icons.remove),
+                                    onPressed: () {
+                                      _removeMember(memberId);
+                                    },
+                                  )
+                                : null,
                       );
                     },
                   );
@@ -543,6 +623,12 @@ class GroupMembersScreen extends StatelessWidget {
     );
   }
 
+  @override
+  void initState() {
+    super.initState();
+    _scaffoldContext = context;
+  }
+
   Future<List<String>> _getUsernames(List<String> userIds) async {
     List<String> usernames = [];
     for (String userId in userIds) {
@@ -558,6 +644,44 @@ class GroupMembersScreen extends StatelessWidget {
       }
     }
     return usernames;
+  }
+
+  void _removeMember(String memberId) async {
+    String? currentUserUid = FirebaseAuth.instance.currentUser?.uid;
+
+    if (currentUserUid != null) {
+      try {
+        // Remove user from group members
+        await FirebaseFirestore.instance
+            .collection('groups')
+            .doc(widget.groupName)
+            .update({
+          'members': FieldValue.arrayRemove([memberId]),
+        });
+
+        // Remove group from user's groups
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(memberId)
+            .collection('groups')
+            .doc(widget.groupName)
+            .delete();
+
+        // Show success message
+        ScaffoldMessenger.of(_scaffoldContext).showSnackBar(
+          SnackBar(
+            content: Text('Removed member successfully.'),
+          ),
+        );
+      } catch (error) {
+        // Show error message
+        ScaffoldMessenger.of(_scaffoldContext).showSnackBar(
+          SnackBar(
+            content: Text('Failed to remove member: $error'),
+          ),
+        );
+      }
+    }
   }
 }
 
