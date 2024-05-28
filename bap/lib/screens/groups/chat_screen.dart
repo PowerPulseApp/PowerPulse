@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class ChatScreen extends StatefulWidget {
   final String groupName;
@@ -19,7 +20,10 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('${widget.groupName} Chat'),
+        title: Text(
+          '${widget.groupName} chat',
+          style: GoogleFonts.bebasNeue(fontSize: 26),
+        ),
       ),
       body: Column(
         children: <Widget>[
@@ -43,7 +47,11 @@ class _ChatScreenState extends State<ChatScreen> {
                   var messageText = message['text'];
                   var messageSender = message['sender'];
                   var isMe = messageSender == currentUserUid;
-                  var messageBubble = MessageBubble(sender: messageSender, text: messageText, isMe: isMe, groupName: widget.groupName);
+                  var messageBubble = MessageBubble(
+                      sender: messageSender,
+                      text: messageText,
+                      isMe: isMe,
+                      groupName: widget.groupName);
                   messageBubbles.add(messageBubble);
                 }
 
@@ -84,13 +92,15 @@ class _ChatScreenState extends State<ChatScreen> {
     String messageText = _messageController.text.trim();
     if (messageText.isNotEmpty) {
       String? currentUserUid = FirebaseAuth.instance.currentUser?.uid;
-      DocumentSnapshot userDoc = await _firestore
-          .collection('users')
-          .doc(currentUserUid)
-          .get();
+      DocumentSnapshot userDoc =
+          await _firestore.collection('users').doc(currentUserUid).get();
       String username = userDoc['username'];
 
-      _firestore.collection('groups').doc(widget.groupName).collection('messages').add({
+      _firestore
+          .collection('groups')
+          .doc(widget.groupName)
+          .collection('messages')
+          .add({
         'text': messageText,
         'sender': username,
         'timestamp': FieldValue.serverTimestamp(),
@@ -107,14 +117,19 @@ class MessageBubble extends StatelessWidget {
   final bool isMe;
   final String groupName;
 
-  MessageBubble({required this.sender, required this.text, required this.isMe, required this.groupName});
+  MessageBubble(
+      {required this.sender,
+      required this.text,
+      required this.isMe,
+      required this.groupName});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(10.0),
       child: Column(
-        crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        crossAxisAlignment:
+            isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: <Widget>[
           if (!isMe)
             Text(
@@ -133,7 +148,8 @@ class MessageBubble extends StatelessWidget {
               children: [
                 Flexible(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 20.0),
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 10.0, horizontal: 20.0),
                     child: Text(
                       text,
                       style: TextStyle(

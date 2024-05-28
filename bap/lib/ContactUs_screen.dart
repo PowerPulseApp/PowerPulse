@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class ContactUsScreen extends StatelessWidget {
   final TextEditingController _emailController = TextEditingController();
@@ -9,7 +10,10 @@ class ContactUsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Contact Us'),
+        title: Text(
+          'Contact Us',
+          style: GoogleFonts.bebasNeue(fontSize: 26),
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

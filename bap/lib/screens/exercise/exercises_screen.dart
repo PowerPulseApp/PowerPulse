@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:video_player/video_player.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
+import 'package:google_fonts/google_fonts.dart';
 
 class ExercisesScreen extends StatefulWidget {
   @override
@@ -28,12 +29,11 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    Color textColor = Theme.of(context).textTheme.bodyText2!.color!;
     return Scaffold(
       appBar: AppBar(
         title: Text(
           'Exercise List',
-          style: TextStyle(color: textColor),
+          style: GoogleFonts.bebasNeue(fontSize: 26),
         ),
         backgroundColor: Colors.transparent,
       ),
@@ -199,7 +199,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       appBar: AppBar(
         title: Text(
           'Info',
-          style: TextStyle(color: textColor),
+          style: GoogleFonts.bebasNeue(fontSize: 26),
         ),
         backgroundColor: Colors.transparent,
       ),

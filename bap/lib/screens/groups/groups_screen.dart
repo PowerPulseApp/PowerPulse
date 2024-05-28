@@ -3,13 +3,19 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:bap/screens/groups/chat_screen.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class GroupsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Groups'),
+        title: Text(
+          'Groups',
+          style: GoogleFonts.bebasNeue(
+            fontSize: 32,
+          ),
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 64.0),
@@ -136,7 +142,10 @@ class CreateGroupScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Create New Group'),
+        title: Text(
+          'Create New Group',
+          style: GoogleFonts.bebasNeue(fontSize: 26),
+        ),
       ),
       body: Padding(
         padding: EdgeInsets.all(20.0),
@@ -262,7 +271,10 @@ class JoinGroupScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Join Group'),
+        title: Text(
+          'Join Group',
+          style: GoogleFonts.bebasNeue(fontSize: 26),
+        ),
       ),
       body: Padding(
         padding: EdgeInsets.all(20.0),
@@ -392,7 +404,10 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(groupName),
+        title: Text(
+          groupName,
+          style: GoogleFonts.bebasNeue(fontSize: 26),
+        ),
         actions: [
           IconButton(
             icon: Icon(Icons.edit),
@@ -411,16 +426,16 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
             },
           ),
           IconButton(
-          icon: Icon(Icons.message),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ChatScreen(widget.groupName),
-              ),
-            );
-          },
-        ),
+            icon: Icon(Icons.message),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ChatScreen(widget.groupName),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: Icon(Icons.exit_to_app),
             onPressed: () {
@@ -429,27 +444,33 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
           ),
         ],
       ),
-      body: Stack(
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Positioned(
-            top: 10,
-            left: 10,
-            child: IconButton(
-              icon: Icon(Icons.bar_chart),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => LeaderboardScreen(groupName),
-                  ),
-                );
-              },
-            ),
+          Text(
+            'Leaderboards',
+            style: GoogleFonts.bebasNeue(fontSize: 24),
           ),
-          Center(
-            child: Text(
-              'Group Details',
-              style: TextStyle(fontSize: 24),
+          SizedBox(height: 20),
+          Expanded(
+            child: FutureBuilder<DocumentSnapshot>(
+              future: FirebaseFirestore.instance
+                  .collection('groups')
+                  .doc(widget.groupName)
+                  .get(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                } else if (snapshot.hasData) {
+                  var groupData = snapshot.data!.data() as Map<String, dynamic>;
+                  List<dynamic> members = groupData['members'];
+                  return _buildLeaderboard(members);
+                } else {
+                  return Center(child: Text('No data found'));
+                }
+              },
             ),
           ),
         ],
@@ -458,85 +479,89 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
   }
 
   Future<void> _showEditDialog() async {
-    await showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Edit Group'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: _groupKeyController,
-                decoration: InputDecoration(
-                  labelText: 'Group Key',
+    // Implement edit dialog
+  }
+
+  Future<void> _updateGroup() async {
+    // Implement group update logic
+  }
+
+  Future<void> _leaveGroup(String groupName) async {
+    // Implement leave group logic
+  }
+
+  Widget _buildLeaderboard(List<dynamic> members) {
+    return FutureBuilder<List<_LeaderboardEntry>>(
+      future: _loadLeaderboardData(members),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        } else {
+          return ListView.builder(
+            itemCount: snapshot.data!.length,
+            itemBuilder: (context, index) {
+              final entry = snapshot.data![index];
+              return ListTile(
+                title: Text(
+                  '${index + 1}. ${entry.username}',
+                  style: GoogleFonts.bebasNeue(fontSize: 20),
                 ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                _updateGroup();
-                Navigator.of(context).pop();
-              },
-              child: Text('Save'),
-            ),
-          ],
-        );
+                trailing: Text(
+                  '${entry.totalWeight.toStringAsFixed(2)} tons',
+                  style: GoogleFonts.bebasNeue(fontSize: 18),
+                ),
+              );
+            },
+          );
+        }
       },
     );
   }
 
-  Future<void> _updateGroup() async {
-    String newGroupName = _groupNameController.text.trim();
-    String newGroupKey = _groupKeyController.text.trim();
+  Future<List<_LeaderboardEntry>> _loadLeaderboardData(
+      List<dynamic> members) async {
+    List<_LeaderboardEntry> leaderboardEntries = [];
+    final now = DateTime.now();
+    final thirtyDaysAgo = now.subtract(Duration(days: 30));
 
-    if (newGroupName.isEmpty || newGroupKey.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Group name and key cannot be empty.'),
-        ),
-      );
-      return;
+    for (var memberId in members) {
+      final workoutSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(memberId)
+          .collection('workouts')
+          .where('timestamp', isGreaterThanOrEqualTo: thirtyDaysAgo)
+          .get();
+
+      double totalWeight = 0;
+      for (var workoutDoc in workoutSnapshot.docs) {
+        final workoutData = workoutDoc.data() as Map<String, dynamic>;
+        totalWeight += workoutData['totalWeight'] / 1000 ?? 0;
+      }
+
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(memberId)
+          .get();
+
+      final userData = userDoc.data() as Map<String, dynamic>;
+      final username = userData['username'];
+
+      leaderboardEntries.add(_LeaderboardEntry(username, totalWeight));
     }
 
-    try {
-      await FirebaseFirestore.instance
-          .collection('groups')
-          .doc(groupName)
-          .update({
-        'name': newGroupName,
-        'key': newGroupKey,
-      });
+    leaderboardEntries.sort((a, b) => b.totalWeight.compareTo(a.totalWeight));
 
-      setState(() {
-        groupName = newGroupName;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Group updated successfully.'),
-        ),
-      );
-    } catch (error) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to update group: $error'),
-        ),
-      );
-    }
+    return leaderboardEntries;
   }
+}
 
-  Future<void> _leaveGroup(String groupName) async {
-    // Leave group logic
-  }
+class _LeaderboardEntry {
+  final String username;
+  final double totalWeight;
+
+  _LeaderboardEntry(this.username, this.totalWeight);
 }
 
 /*
@@ -562,7 +587,10 @@ class _GroupMembersScreenState extends State<GroupMembersScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Members'),
+        title: Text(
+          'Members',
+          style: GoogleFonts.bebasNeue(fontSize: 26),
+        ),
       ),
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance
@@ -596,7 +624,10 @@ class _GroupMembersScreenState extends State<GroupMembersScreen> {
                       String memberId = memberIds[index];
                       String memberUsername = memberUsernames[index];
                       return ListTile(
-                        title: Text(memberUsername),
+                        title: Text(
+                          memberUsername,
+                          style: GoogleFonts.bebasNeue(fontSize: 20),
+                        ),
                         onTap: () {
                           Navigator.push(
                             context,
@@ -703,121 +734,52 @@ Leaderboards stuff
 .
 */
 
-class LeaderboardScreen extends StatelessWidget {
-  final String groupName;
+Future<List<Widget>> _loadLeaderboardData(List<dynamic> members) async {
+  List<_LeaderboardEntry> leaderboardEntries = [];
+  final now = DateTime.now();
+  final thirtyDaysAgo = now.subtract(Duration(days: 30));
 
-  LeaderboardScreen(this.groupName);
+  for (var memberId in members) {
+    final workoutSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(memberId)
+        .collection('workouts')
+        .where('timestamp', isGreaterThanOrEqualTo: thirtyDaysAgo)
+        .get();
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Leaderboard'),
+    double totalWeight = 0;
+    for (var workoutDoc in workoutSnapshot.docs) {
+      final workoutData = workoutDoc.data() as Map<String, dynamic>;
+      totalWeight += workoutData['totalWeight'] / 1000 ?? 0;
+    }
+
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(memberId)
+        .get();
+
+    final userData = userDoc.data() as Map<String, dynamic>;
+    final username = userData['username'];
+
+    leaderboardEntries.add(_LeaderboardEntry(username, totalWeight));
+  }
+
+  leaderboardEntries.sort((a, b) => b.totalWeight.compareTo(a.totalWeight));
+
+  List<Widget> leaderboardTiles = [];
+  for (int i = 0; i < leaderboardEntries.length; i++) {
+    leaderboardTiles.add(ListTile(
+      title: Text('${i + 1}. ${leaderboardEntries[i].username}',
+          style: TextStyle(fontSize: 15)),
+      trailing: Text(
+        '${leaderboardEntries[i].totalWeight.toStringAsFixed(2)} tons',
+        style: TextStyle(fontSize: 15),
       ),
-      body: _buildLeaderboard(groupName),
-    );
+    ));
   }
 
-  Widget _buildLeaderboard(String groupName) {
-    return FutureBuilder<DocumentSnapshot>(
-      future:
-          FirebaseFirestore.instance.collection('groups').doc(groupName).get(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
-        } else if (snapshot.hasData) {
-          var groupData = snapshot.data!.data() as Map<String, dynamic>;
-          List<dynamic> members = groupData['members'];
-
-          return FutureBuilder(
-            future: _loadLeaderboardData(members),
-            builder:
-                (context, AsyncSnapshot<List<Widget>> leaderboardSnapshot) {
-              if (leaderboardSnapshot.connectionState ==
-                  ConnectionState.waiting) {
-                return Center(child: CircularProgressIndicator());
-              } else if (leaderboardSnapshot.hasError) {
-                return Center(
-                    child: Text('Error: ${leaderboardSnapshot.error}'));
-              } else {
-                return ListView(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Text(
-                        'Total weight lifted over last 30 days',
-                        style: TextStyle(
-                            fontSize: 24, fontWeight: FontWeight.bold),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    ...leaderboardSnapshot.data!,
-                  ],
-                );
-              }
-            },
-          );
-        } else {
-          return Center(child: Text('No data found'));
-        }
-      },
-    );
-  }
-
-  Future<List<Widget>> _loadLeaderboardData(List<dynamic> members) async {
-    List<_LeaderboardEntry> leaderboardEntries = [];
-    final now = DateTime.now();
-    final thirtyDaysAgo = now.subtract(Duration(days: 30));
-
-    for (var memberId in members) {
-      final workoutSnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(memberId)
-          .collection('workouts')
-          .where('timestamp', isGreaterThanOrEqualTo: thirtyDaysAgo)
-          .get();
-
-      double totalWeight = 0;
-      for (var workoutDoc in workoutSnapshot.docs) {
-        final workoutData = workoutDoc.data() as Map<String, dynamic>;
-        totalWeight += workoutData['totalWeight']/1000 ?? 0;
-      }
-
-      final userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(memberId)
-          .get();
-
-      final userData = userDoc.data() as Map<String, dynamic>;
-      final username = userData['username'];
-
-      leaderboardEntries.add(_LeaderboardEntry(username, totalWeight));
-    }
-
-    leaderboardEntries.sort((a, b) => b.totalWeight.compareTo(a.totalWeight));
-
-    List<Widget> leaderboardTiles = [];
-    for (int i = 0; i < leaderboardEntries.length; i++) {
-      leaderboardTiles.add(ListTile(
-        title: Text('${i + 1}. ${leaderboardEntries[i].username}', style: TextStyle(fontSize: 15)),
-        trailing: Text('${leaderboardEntries[i].totalWeight.toStringAsFixed(2)} tons', style: TextStyle(fontSize: 15)),
-      ));
-    }
-
-    return leaderboardTiles;
-  }
+  return leaderboardTiles;
 }
-
-class _LeaderboardEntry {
-  final String username;
-  final double totalWeight;
-
-  _LeaderboardEntry(this.username, this.totalWeight);
-}
-
-
 
 void main() {
   runApp(MaterialApp(

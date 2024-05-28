@@ -74,9 +74,6 @@ class LogoWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Color logoColor =
-        Theme.of(context).primaryColor; // Get color from the theme
-
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Image.asset(
