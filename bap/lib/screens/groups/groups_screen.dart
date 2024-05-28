@@ -2,6 +2,7 @@ import 'package:bap/screens/groups/other_profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:bap/screens/groups/chat_screen.dart';
 
 class GroupsScreen extends StatelessWidget {
   @override
@@ -410,6 +411,17 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
             },
           ),
           IconButton(
+          icon: Icon(Icons.message),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ChatScreen(widget.groupName),
+              ),
+            );
+          },
+        ),
+          IconButton(
             icon: Icon(Icons.exit_to_app),
             onPressed: () {
               _leaveGroup(groupName);
@@ -770,7 +782,7 @@ class LeaderboardScreen extends StatelessWidget {
       double totalWeight = 0;
       for (var workoutDoc in workoutSnapshot.docs) {
         final workoutData = workoutDoc.data() as Map<String, dynamic>;
-        totalWeight += workoutData['totalWeight'] / 1000 ?? 0;
+        totalWeight += workoutData['totalWeight']/1000 ?? 0;
       }
 
       final userDoc = await FirebaseFirestore.instance
@@ -789,12 +801,8 @@ class LeaderboardScreen extends StatelessWidget {
     List<Widget> leaderboardTiles = [];
     for (int i = 0; i < leaderboardEntries.length; i++) {
       leaderboardTiles.add(ListTile(
-        title: Text('${i + 1}. ${leaderboardEntries[i].username}',
-            style: TextStyle(fontSize: 15)),
-        trailing: Text(
-          '${leaderboardEntries[i].totalWeight.toStringAsFixed(2)} tons',
-          style: TextStyle(fontSize: 15),
-        ),
+        title: Text('${i + 1}. ${leaderboardEntries[i].username}'),
+        trailing: Text('${leaderboardEntries[i].totalWeight} tons', style: TextStyle(fontSize: 15)),
       ));
     }
 
@@ -808,6 +816,8 @@ class _LeaderboardEntry {
 
   _LeaderboardEntry(this.username, this.totalWeight);
 }
+
+
 
 void main() {
   runApp(MaterialApp(
