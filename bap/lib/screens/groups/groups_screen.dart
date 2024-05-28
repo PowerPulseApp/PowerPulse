@@ -770,7 +770,7 @@ class LeaderboardScreen extends StatelessWidget {
       double totalWeight = 0;
       for (var workoutDoc in workoutSnapshot.docs) {
         final workoutData = workoutDoc.data() as Map<String, dynamic>;
-        totalWeight += workoutData['totalWeight'] ?? 0;
+        totalWeight += workoutData['totalWeight'] / 1000 ?? 0;
       }
 
       final userDoc = await FirebaseFirestore.instance
@@ -789,8 +789,12 @@ class LeaderboardScreen extends StatelessWidget {
     List<Widget> leaderboardTiles = [];
     for (int i = 0; i < leaderboardEntries.length; i++) {
       leaderboardTiles.add(ListTile(
-        title: Text('${i + 1}. ${leaderboardEntries[i].username}'),
-        trailing: Text('${leaderboardEntries[i].totalWeight} kg'),
+        title: Text('${i + 1}. ${leaderboardEntries[i].username}',
+            style: TextStyle(fontSize: 15)),
+        trailing: Text(
+          '${leaderboardEntries[i].totalWeight.toStringAsFixed(2)} tons',
+          style: TextStyle(fontSize: 15),
+        ),
       ));
     }
 
