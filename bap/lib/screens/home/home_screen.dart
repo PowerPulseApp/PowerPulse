@@ -39,7 +39,7 @@ class HomeScreen extends StatelessWidget {
           ),
           SizedBox(height: 10),
           Expanded(
-            child: _buildPieChart(),
+            child: _buildPieChartWithLegend(),
           ),
         ],
       ),
@@ -126,7 +126,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPieChart() {
+  Widget _buildPieChartWithLegend() {
     return FutureBuilder<Map<String, double>>(
       future: _getMuscleWorkload(),
       builder: (context, snapshot) {
@@ -137,32 +137,82 @@ class HomeScreen extends StatelessWidget {
             return Center(child: Text('Error loading data: ${snapshot.error}'));
           } else {
             Map<String, double> muscleData = snapshot.data ?? {};
-            print('Muscle Data: $muscleData'); // Add this line for logging
+            print('Muscle Data: $muscleData');
             if (muscleData.isEmpty) {
               return Center(child: Text('No muscle workload data available'));
             }
 
             List<PieChartSectionData> sections =
                 muscleData.entries.map((entry) {
+              double percentage = (entry.value /
+                      muscleData.values
+                          .reduce((sum, element) => sum + element)) *
+                  100;
               return PieChartSectionData(
                 color: getColorForMuscle(entry.key),
                 value: entry.value,
-                title:
-                    '${((entry.value / muscleData.values.reduce((a, b) => a + b)) * 100).toStringAsFixed(1)}%',
+                title: '${percentage.toStringAsFixed(1)}%',
                 radius: 60,
-                titleStyle: TextStyle(fontSize: 16, color: Colors.white),
+                titleStyle: TextStyle(fontSize: 12, color: Colors.white),
               );
             }).toList();
 
             return Padding(
               padding: const EdgeInsets.all(16.0),
-              child: PieChart(
-                PieChartData(
-                  sections: sections,
-                  borderData: FlBorderData(show: false),
-                  centerSpaceRadius: 40,
-                  sectionsSpace: 2,
-                ),
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: PieChart(
+                      PieChartData(
+                        sections: sections,
+                        borderData: FlBorderData(show: false),
+                        centerSpaceRadius: 40,
+                        sectionsSpace: 2,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 1,
+                    child: ListView(
+                      children: muscleData.entries.map((entry) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4.0),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 16,
+                                height: 16,
+                                color: getColorForMuscle(entry.key),
+                              ),
+                              SizedBox(width: 8),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    entry.key,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  Text(
+                                    '(${entry.value.toStringAsFixed(1)} kg)',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ],
               ),
             );
           }
@@ -174,15 +224,15 @@ class HomeScreen extends StatelessWidget {
   Color getColorForMuscle(String muscle) {
     switch (muscle) {
       case 'chest':
-        return Colors.red;
+        return Color.fromARGB(255, 106, 26, 131);
       case 'back':
-        return Colors.green;
+        return Color.fromARGB(255, 18, 22, 235);
       case 'legs':
-        return Colors.blue;
+        return Color.fromARGB(255, 200, 0, 250);
       case 'arms':
-        return Colors.yellow;
+        return Color.fromARGB(255, 200, 132, 255);
       case 'shoulders':
-        return Colors.orange;
+        return Color.fromARGB(255, 47, 0, 122);
       default:
         return Colors.grey;
     }
@@ -209,9 +259,10 @@ class HomeScreen extends StatelessWidget {
 
             double totalWeight = 0;
             for (var set in sets) {
-              double reps = set['reps'];
-              double weight = set['kg'];
-              totalWeight += reps * weight;
+              int reps = set['reps']; // Ensure reps is an int
+              double weight =
+                  (set['kg'] as num).toDouble(); // Ensure weight is a double
+              totalWeight += (reps * weight);
             }
 
             String muscle = await _getMuscleForExercise(name);
@@ -277,10 +328,26 @@ class HomeScreen extends StatelessWidget {
             workoutsSnapshot.docs.reversed.toList();
 
         for (QueryDocumentSnapshot workout in reversedWorkouts) {
-          double totalWeight = workout.get('totalWeight') / 1000;
+          List<dynamic> exercises = workout.get('exercises');
+
+          double totalWeight = 0;
+
+          for (var exercise in exercises) {
+            List<dynamic> sets = exercise['sets'];
+
+            for (var set in sets) {
+              int reps = set['reps'];
+              double weight =
+                  (set['kg'] as num).toDouble(); // Ensure weight is a double
+              totalWeight += (reps * weight);
+            }
+          }
+
+          totalWeight = totalWeight / 1000; // Convert to tons
           spots.add(FlSpot(index.toDouble(), totalWeight));
           index++;
         }
+
         return spots;
       } catch (e) {
         print('Error fetching workout data: $e');
@@ -299,8 +366,8 @@ class HomeScreen extends StatelessWidget {
             .collection('users')
             .doc(user.uid)
             .get();
-        String username = userDoc.get('username');
-        return username;
+
+        return userDoc.get('username');
       } catch (e) {
         print('Error fetching username: $e');
         return 'User';
