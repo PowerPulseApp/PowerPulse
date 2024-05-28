@@ -801,8 +801,8 @@ class LeaderboardScreen extends StatelessWidget {
     List<Widget> leaderboardTiles = [];
     for (int i = 0; i < leaderboardEntries.length; i++) {
       leaderboardTiles.add(ListTile(
-        title: Text('${i + 1}. ${leaderboardEntries[i].username}'),
-        trailing: Text('${leaderboardEntries[i].totalWeight} tons', style: TextStyle(fontSize: 15)),
+        title: Text('${i + 1}. ${leaderboardEntries[i].username}', style: TextStyle(fontSize: 15)),
+        trailing: Text('${leaderboardEntries[i].totalWeight.toStringAsFixed(2)} tons', style: TextStyle(fontSize: 15)),
       ));
     }
 
