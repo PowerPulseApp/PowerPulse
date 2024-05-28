@@ -155,7 +155,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       appBar: AppBar(
         title: Text(
           'Profile',
-          style: GoogleFonts.bebasNeue(),
+          style: GoogleFonts.bebasNeue(fontSize: 26),
         ),
         actions: [
           IconButton(

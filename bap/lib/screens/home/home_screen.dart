@@ -197,7 +197,7 @@ class HomeScreen extends StatelessWidget {
                                     ),
                                   ),
                                   Text(
-                                    '(${entry.value.toStringAsFixed(1)} kg)',
+                                    '(${entry.value.toStringAsFixed(2)} tons)',
                                     style: TextStyle(
                                       fontSize: 12,
                                       color: Colors.grey,
@@ -226,7 +226,7 @@ class HomeScreen extends StatelessWidget {
       case 'chest':
         return Color.fromARGB(255, 106, 26, 131);
       case 'back':
-        return Color.fromARGB(255, 18, 22, 235);
+        return Color.fromARGB(255, 90, 68, 148);
       case 'legs':
         return Color.fromARGB(255, 200, 0, 250);
       case 'arms':
@@ -262,7 +262,7 @@ class HomeScreen extends StatelessWidget {
               int reps = set['reps']; // Ensure reps is an int
               double weight =
                   (set['kg'] as num).toDouble(); // Ensure weight is a double
-              totalWeight += (reps * weight);
+              totalWeight += (reps * weight / 1000);
             }
 
             String muscle = await _getMuscleForExercise(name);
