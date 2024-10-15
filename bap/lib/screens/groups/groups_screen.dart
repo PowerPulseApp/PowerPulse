@@ -392,27 +392,65 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
   TextEditingController _groupNameController = TextEditingController();
   TextEditingController _groupKeyController = TextEditingController();
   String groupName = "";
+  String _groupKey = '';
+  
 
   @override
   void initState() {
     super.initState();
     _groupNameController.text = widget.groupName;
     groupName = widget.groupName;
+    _loadGroupKey();
   }
-
+  Future<void> _loadGroupKey() async {
+    final groupDoc = await FirebaseFirestore.instance
+        .collection('groups')
+        .doc(widget.groupName)
+        .get();
+    if (groupDoc.exists) {
+      final groupData = groupDoc.data() as Map<String, dynamic>;
+      setState(() {
+        _groupKey = groupData['key'];
+      });
+    }
+  }
+bool _showKey = false;
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context,) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          groupName,
-          style: GoogleFonts.bebasNeue(fontSize: 26),
+        title: Row(
+    children: [
+            Text(
+              groupName,
+              style: GoogleFonts.bebasNeue(fontSize: 26),
+            ),
+            SizedBox(width: 8), // add some space between the name and key
+            Opacity(
+              opacity: _showKey ? 1.0 : 0.0, // blur the text if _showKey is false
+              child: Text(
+                '($_groupKey)',
+                style: GoogleFonts.bebasNeue(fontSize: 16, color: const Color.fromARGB(255, 109, 109, 109)),
+              ),
+            ),
+            IconButton(
+              icon: Icon(_showKey ? Icons.visibility_off : Icons.visibility),
+              onPressed: () {
+                setState(() {
+                  _showKey = !_showKey;
+                });
+              },
+            ),
+          ],
+          
         ),
         actions: [
+          /*
           IconButton(
             icon: Icon(Icons.edit),
-            onPressed: _showEditDialog,
+            onPressed: () async {},
           ),
+          */
           IconButton(
             icon: Icon(Icons.group),
             onPressed: () {
@@ -479,7 +517,7 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
   }
 
   Future<void> _showEditDialog() async {
-    // Implement edit dialog
+    
   }
 
   Future<void> _updateGroup() async {
@@ -487,7 +525,27 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
   }
 
   Future<void> _leaveGroup(String groupName) async {
-    // Implement leave group logic
+  User? user = FirebaseAuth.instance.currentUser;  
+  DocumentReference groupRef = FirebaseFirestore.instance
+          .collection('groups')
+          .doc(groupName);
+
+      // Remove the user from the members array
+      await groupRef.update({
+        'members': FieldValue.arrayRemove([user?.uid])
+      });
+
+      DocumentReference userGroupRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user?.uid)
+        .collection('groups')
+        .doc(groupName);
+
+    // Delete the group document from the user's groups collection
+    await userGroupRef.delete();
+
+    Navigator.of(context).pop();
+
   }
 
   Widget _buildLeaderboard(List<dynamic> members) {

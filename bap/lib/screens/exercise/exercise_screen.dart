@@ -47,13 +47,6 @@ class ExerciseScreen extends StatelessWidget {
               ),
             );
           },
-          style: ElevatedButton.styleFrom(
-            primary: currentColorScheme.onSurface.withOpacity(0.6),
-            onPrimary: currentColorScheme.onPrimary,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15.0),
-            ),
-          ),
           child: Padding(
             padding: const EdgeInsets.symmetric(
                 vertical: 12.0), // Adjust vertical padding
